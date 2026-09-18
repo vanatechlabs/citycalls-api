@@ -1,0 +1,75 @@
+import { Response, NextFunction } from 'express';
+import * as happyCallsService from './happyCalls.service';
+import { approveReopenRequest, rejectReopenRequest } from '../service-requests/serviceRequests.service';
+import { sendSuccess, paramAsString } from '../../lib/apiResponse';
+import { ScopedRequest } from '../../middleware/permission.middleware';
+import { UnauthorizedError } from '../../lib/errors';
+
+export async function listHappyCallsHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    const { items, meta } = await happyCallsService.listHappyCalls(req.query as never);
+    sendSuccess(res, items, 'Happy calls fetched successfully', meta);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function listReopenRequestsHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    const { items, meta } = await happyCallsService.listAllReopenRequests(req.query as unknown as { page: number; limit: number; status?: string });
+    sendSuccess(res, items, 'Reopen requests retrieved', meta);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function approveReopenRequestHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) throw new UnauthorizedError();
+    const result = await approveReopenRequest(paramAsString(req.params.id), req.user);
+    sendSuccess(res, result, 'Reopen request approved successfully');
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function rejectReopenRequestHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) throw new UnauthorizedError();
+    const { reason } = req.body as { reason: string };
+    const result = await rejectReopenRequest(paramAsString(req.params.id), reason, req.user);
+    sendSuccess(res, result, 'Reopen request rejected');
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getHappyCallHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    const happyCall = await happyCallsService.getHappyCall(paramAsString(req.params.id));
+    sendSuccess(res, happyCall, 'Happy call fetched successfully');
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function recordOutcomeHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) throw new UnauthorizedError();
+    const happyCall = await happyCallsService.recordOutcome(paramAsString(req.params.id), req.body, req.user);
+    sendSuccess(res, happyCall, 'Happy call outcome recorded successfully');
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function reassignHappyCallHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) throw new UnauthorizedError();
+    const { assignedTo } = req.body as { assignedTo: string };
+    const happyCall = await happyCallsService.reassignHappyCall(paramAsString(req.params.id), assignedTo, req.user);
+    sendSuccess(res, happyCall, 'Happy call reassigned successfully');
+  } catch (err) {
+    next(err);
+  }
+}
