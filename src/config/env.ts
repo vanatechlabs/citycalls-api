@@ -18,7 +18,7 @@ export const env = {
   jwtRefreshSecret: required('JWT_REFRESH_SECRET', 'dev-refresh-secret-change-me'),
   jwtAccessExpiresIn: required('JWT_ACCESS_EXPIRES_IN', '15m'),
   jwtRefreshExpiresIn: required('JWT_REFRESH_EXPIRES_IN', '7d'),
-  corsAllowedOrigins: required('CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(','),
+  corsAllowedOrigins: required('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:8080').split(','),
   redisUrl: process.env.REDIS_URL,
   cloudinary: {
     enabled: process.env.CLOUDINARY_ENABLED === 'true',

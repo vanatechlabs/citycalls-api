@@ -11,6 +11,8 @@ import {
   rolePermissionIdParamSchema,
   createRolePermissionSchema,
   updateRolePermissionSchema,
+  createCustomRoleSchema,
+  updateCustomRoleStatusSchema,
 } from './users.validation';
 import * as ctrl from './users.controller';
 
@@ -31,8 +33,39 @@ router.get('/users', authMiddleware, requirePermission('users', 'view'), validat
 router.get('/users/:id', authMiddleware, requirePermission('users', 'view'), ctrl.getUserHandler);
 router.post('/users', authMiddleware, requirePermission('users', 'create'), validate(createUserSchema), ctrl.createUserHandler);
 router.patch('/users/:id', authMiddleware, requirePermission('users', 'edit'), validate(updateUserSchema), ctrl.updateUserHandler);
+router.delete(
+  '/users/:id',
+  authMiddleware,
+  requirePermission('users', 'manageSettings'),
+  requireSuperAdminOnly,
+  ctrl.deleteUserHandler
+);
 
 router.get('/roles', authMiddleware, requirePermission('users', 'view'), ctrl.listRolesHandler);
+router.post(
+  '/roles',
+  authMiddleware,
+  requirePermission('users', 'manageSettings'),
+  requireSuperAdminOnly,
+  validate(createCustomRoleSchema),
+  ctrl.createCustomRoleHandler
+);
+router.delete(
+  '/roles/:role',
+  authMiddleware,
+  requirePermission('users', 'manageSettings'),
+  requireSuperAdminOnly,
+  ctrl.deleteCustomRoleHandler
+);
+router.patch(
+  '/roles/:role/status',
+  authMiddleware,
+  requirePermission('users', 'manageSettings'),
+  requireSuperAdminOnly,
+  validate(rolePermissionRoleParamSchema, 'params'),
+  validate(updateCustomRoleStatusSchema),
+  ctrl.updateCustomRoleStatusHandler
+);
 router.post(
   '/roles/:role/permissions',
   authMiddleware,

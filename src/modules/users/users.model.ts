@@ -1,5 +1,5 @@
 import { Schema, model, Document, Types } from 'mongoose';
-import { ROLES, Role, USER_STATUSES, UserStatus } from './users.types';
+import { Role, USER_STATUSES, UserStatus } from './users.types';
 
 export interface IUser extends Document {
   name: string;
@@ -32,7 +32,11 @@ const userSchema = new Schema<IUser>(
     email: { type: String, trim: true, lowercase: true },
     mobile: { type: String, required: true, unique: true, trim: true },
     passwordHash: { type: String, required: true, select: false },
-    role: { type: String, enum: ROLES, required: true },
+    // Not enum-restricted to ROLES here — a user may also hold a custom role
+    // (customRoles.model.ts). Validity (built-in ROLES OR an existing
+    // CustomRole slug) is checked at the service layer, in
+    // users.service.ts's assertValidRole(), before this is ever written.
+    role: { type: String, required: true },
     status: { type: String, enum: USER_STATUSES, default: 'ACTIVE' },
     branchId: { type: Schema.Types.ObjectId, ref: 'Branch' },
     subBranchId: { type: Schema.Types.ObjectId, ref: 'SubBranch' },

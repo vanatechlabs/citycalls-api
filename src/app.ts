@@ -33,6 +33,7 @@ import searchRoutes from './modules/search/search.routes';
 import geoRoutes from './modules/geo/geo.routes';
 import complaintsRoutes from './modules/complaints/complaints.routes';
 import appointmentSlotsRoutes from './modules/appointment-slots/appointmentSlots.routes';
+import cityCallsHomeHeroRoutes from './modules/websites/city-calls/home-page/hero-carousel/heroSlide.routes';
 
 export function createApp(): Application {
   const app = express();
@@ -86,6 +87,7 @@ export function createApp(): Application {
   app.use('/api/v1', geoRoutes);
   app.use('/api/v1', complaintsRoutes);
   app.use('/api/v1', appointmentSlotsRoutes);
+  app.use('/api/v1', cityCallsHomeHeroRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

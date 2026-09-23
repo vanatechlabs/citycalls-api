@@ -15,7 +15,7 @@ function transitionKey(entityType: EntityType, from: string, to: string): CacheK
   return `${entityType}:${from}:${to}`;
 }
 
-export async function loadStatusEngineCache(): Promise<void> {
+export async function loadStatusEngineCache(): Promise<number> {
   const rows = await StatusTransitionModel.find().lean();
   const next = new Map<CacheKey, Role[]>();
   const nextByFrom = new Map<`${EntityType}:${string}`, string[]>();
@@ -31,6 +31,7 @@ export async function loadStatusEngineCache(): Promise<void> {
   cache = next;
   byFromStatus = nextByFrom;
   console.log(`[statusEngine] loaded ${cache.size} status-transition entries`);
+  return cache.size;
 }
 
 export function getAllowedTransitions(entityType: EntityType, fromStatus: string): string[] {

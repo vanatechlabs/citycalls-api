@@ -24,6 +24,8 @@ export const FILE_CATEGORIES = [
   'CATALOG_IMAGE',
   // Publicly accessible image/video header used by WhatsApp/email campaigns.
   'MARKETING_MEDIA',
+  // Background image for a home-page hero carousel slide (website module).
+  'WEBSITE_HERO_IMAGE',
 ] as const;
 export type FileCategory = (typeof FILE_CATEGORIES)[number];
 

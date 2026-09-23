@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import { ROLES, DATA_SCOPES } from './users.types';
+import { DATA_SCOPES } from './users.types';
+
+// Not z.enum(ROLES) — a role can also be a custom role slug (customRoles.model.ts).
+// Real validity (built-in ROLES OR an existing CustomRole) is checked in
+// users.service.ts's assertValidRole(), which returns a proper 422 with a
+// field-level error, same as any other business-rule validation failure.
+const roleSchema = z.string().min(1);
 
 const communicationConsentSchema = z.object({
   whatsappMarketing: z.enum(['GRANTED', 'REVOKED', 'NOT_ASKED']).optional(),
@@ -11,7 +17,7 @@ export const createUserSchema = z.object({
   email: z.string().email().optional(),
   mobile: z.string().min(10),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  role: z.enum(ROLES),
+  role: roleSchema,
   branchId: z.string().optional(),
   subBranchId: z.string().optional(),
   teamId: z.string().optional(),
@@ -22,7 +28,7 @@ export const createUserSchema = z.object({
 export const updateUserSchema = z.object({
   name: z.string().min(2).optional(),
   email: z.string().email().optional(),
-  role: z.enum(ROLES).optional(),
+  role: roleSchema.optional(),
   branchId: z.string().optional(),
   subBranchId: z.string().optional(),
   teamId: z.string().optional(),
@@ -34,20 +40,20 @@ export const updateUserSchema = z.object({
 export const listUsersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
-  role: z.enum(ROLES).optional(),
+  role: roleSchema.optional(),
   branchId: z.string().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
   q: z.string().optional(),
 });
 
 export const rolePermissionRoleParamSchema = z.object({
-  role: z.enum(ROLES),
+  role: roleSchema,
 });
 
 // validate() replaces req.params entirely with the parsed result — a schema
 // missing `id` would silently strip it for the /:role/permissions/:id routes.
 export const rolePermissionIdParamSchema = z.object({
-  role: z.enum(ROLES),
+  role: roleSchema,
   id: z.string().min(1),
 });
 
@@ -59,4 +65,13 @@ export const createRolePermissionSchema = z.object({
 
 export const updateRolePermissionSchema = z.object({
   dataScope: z.enum(DATA_SCOPES),
+});
+
+export const createCustomRoleSchema = z.object({
+  name: z.string().min(2),
+  description: z.string().optional(),
+});
+
+export const updateCustomRoleStatusSchema = z.object({
+  status: z.enum(['ACTIVE', 'INACTIVE']),
 });

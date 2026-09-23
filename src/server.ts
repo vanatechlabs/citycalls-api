@@ -11,8 +11,8 @@ import { env } from './config/env';
 
 async function main(): Promise<void> {
   await connectDb();
-  await loadPermissionCache();
-  await loadStatusEngineCache();
+  const permissionCount = await loadPermissionCache();
+  const transitionCount = await loadStatusEngineCache();
 
   const app = createApp();
   const httpServer = http.createServer(app);
@@ -22,7 +22,22 @@ async function main(): Promise<void> {
   startCampaignSchedulerInterval();
 
   httpServer.listen(env.port, () => {
-    console.log(`[server] citycalls-api listening on port ${env.port} (${env.nodeEnv})`);
+    // ─── Startup Status ───────────────────────────────
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('  🚀  Server      : http://localhost:' + env.port);
+    console.log('  🍃  MongoDB     : ✅ Connected');
+    console.log('  🔌  Realtime    : ✅ Socket.IO active');
+    console.log('  🔐  Permissions : ✅ ' + permissionCount + ' entries loaded');
+    console.log('  🔁  Status Engine: ✅ ' + transitionCount + ' transitions loaded');
+
+    if (env.cloudinary.enabled) {
+      console.log('  ☁️   Cloudinary  : ✅ Connected (' + (env.cloudinary.cloudName || 'Active') + ')');
+    } else {
+      console.log('  ☁️   Cloudinary  : ❌ Not Configured');
+    }
+
+    console.log(`  🌱  Environment : ${env.nodeEnv}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   });
 }
 

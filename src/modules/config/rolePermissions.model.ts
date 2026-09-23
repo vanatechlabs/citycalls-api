@@ -1,10 +1,10 @@
 import { Schema, model, Document, Types } from 'mongoose';
-import { ROLES, Role, DATA_SCOPES, DataScope } from '../users/users.types';
+import { DATA_SCOPES, DataScope } from '../users/users.types';
 
 // One document per {role, module, action} — docs/09-database-architecture.md §"role_permissions"
 // and docs/manish/03-database-model-implementation-plan.md §3.
 export interface IRolePermission extends Document {
-  role: Role;
+  role: string; // a built-in Role (users.types.ts) or a CustomRole slug — see users.model.ts's role field
   module: string;
   action: string;
   dataScope: DataScope;
@@ -18,7 +18,10 @@ export interface IRolePermission extends Document {
 
 const rolePermissionSchema = new Schema<IRolePermission>(
   {
-    role: { type: String, enum: ROLES, required: true },
+    // Not enum-restricted — see the IRolePermission.role comment above.
+    // Validity is checked at the service layer (users.service.ts's
+    // assertValidRole()) before this is ever written.
+    role: { type: String, required: true },
     module: { type: String, required: true },
     action: { type: String, required: true },
     dataScope: { type: String, enum: DATA_SCOPES, required: true },
