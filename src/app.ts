@@ -26,6 +26,7 @@ import notificationsRoutes from './modules/notifications/notifications.routes';
 import campaignsRoutes from './modules/marketing/campaigns.routes';
 import aiRoutes from './modules/ai/ai.routes';
 import reportsRoutes from './modules/reports/reports.routes';
+import dashboardRoutes from './modules/dashboard/dashboard.routes';
 import exportRoutes from './modules/import-export/export.routes';
 import importRoutes from './modules/import-export/import.routes';
 import auditRoutes from './modules/audit/audit.routes';
@@ -34,6 +35,7 @@ import geoRoutes from './modules/geo/geo.routes';
 import complaintsRoutes from './modules/complaints/complaints.routes';
 import appointmentSlotsRoutes from './modules/appointment-slots/appointmentSlots.routes';
 import cityCallsHomeHeroRoutes from './modules/websites/city-calls/home-page/hero-carousel/heroSlide.routes';
+import cityCallsNavbarRoutes from './modules/websites/city-calls/navbar/navbar.routes';
 
 export function createApp(): Application {
   const app = express();
@@ -80,6 +82,7 @@ export function createApp(): Application {
   app.use('/api/v1', campaignsRoutes);
   app.use('/api/v1', aiRoutes);
   app.use('/api/v1', reportsRoutes);
+  app.use('/api/v1', dashboardRoutes);
   app.use('/api/v1', exportRoutes);
   app.use('/api/v1', importRoutes);
   app.use('/api/v1', auditRoutes);
@@ -88,6 +91,7 @@ export function createApp(): Application {
   app.use('/api/v1', complaintsRoutes);
   app.use('/api/v1', appointmentSlotsRoutes);
   app.use('/api/v1', cityCallsHomeHeroRoutes);
+  app.use('/api/v1', cityCallsNavbarRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

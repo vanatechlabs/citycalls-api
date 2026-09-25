@@ -26,6 +26,8 @@ export const FILE_CATEGORIES = [
   'MARKETING_MEDIA',
   // Background image for a home-page hero carousel slide (website module).
   'WEBSITE_HERO_IMAGE',
+  // Icon/preview image for a navbar dropdown service link (website module).
+  'NAVBAR_SERVICE_IMAGE',
 ] as const;
 export type FileCategory = (typeof FILE_CATEGORIES)[number];
 
