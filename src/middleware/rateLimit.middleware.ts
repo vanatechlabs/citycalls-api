@@ -43,6 +43,21 @@ export const generalApiRateLimit = rateLimit({
   },
 });
 
+// Unauthenticated website booking form — a real customer books a handful of
+// services at most, so anything beyond this per IP is spam.
+export const publicBookingRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many bookings from this network. Please try again later or call us.',
+    data: null,
+    errors: [{ field: 'general', code: 'RATE_LIMITED', message: 'Too many bookings' }],
+  },
+});
+
 export const publicApiRateLimit = rateLimit({
   windowMs: 60 * 1000,
   limit: 60,

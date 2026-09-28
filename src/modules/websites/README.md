@@ -7,7 +7,8 @@ This keeps similarly named sections from City Calls, HelpNow, and Beauty & Salon
 websites/
 |-- city-calls/
 |   `-- home-page/
-|       `-- hero-carousel/
+|       |-- hero-carousel/
+|       `-- offers/
 |-- help-now/
 |   `-- home-page/
 `-- beauty-and-salon/

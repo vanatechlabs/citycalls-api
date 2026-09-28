@@ -11,7 +11,9 @@
     "test:watch": "jest --watch",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
-    "seed": "ts-node-dev --transpile-only scripts/seed.ts"
+    "seed": "ts-node-dev --transpile-only scripts/seed.ts",
+    "seed:navbar": "ts-node-dev --transpile-only scripts/seedNavbarServices.ts",
+    "migrate:registrations": "ts-node-dev --transpile-only scripts/migrateRegistrationStatuses.ts"
   },
   "keywords": [],
   "author": "",

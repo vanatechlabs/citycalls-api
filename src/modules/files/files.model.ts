@@ -26,8 +26,15 @@ export const FILE_CATEGORIES = [
   'MARKETING_MEDIA',
   // Background image for a home-page hero carousel slide (website module).
   'WEBSITE_HERO_IMAGE',
+  // Image displayed inside the floating home-page launch spotlight card.
+  'WEBSITE_SPOTLIGHT_IMAGE',
   // Icon/preview image for a navbar dropdown service link (website module).
   'NAVBAR_SERVICE_IMAGE',
+  // Hero and lower promotional banner images for CMS-managed service pages.
+  'WEBSITE_PAGE_HERO_IMAGE',
+  'WEBSITE_PAGE_BANNER_IMAGE',
+  // Social share (og:image) picture for a page's SEO entry.
+  'WEBSITE_SEO_OG_IMAGE',
 ] as const;
 export type FileCategory = (typeof FILE_CATEGORIES)[number];
 

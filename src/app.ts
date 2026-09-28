@@ -35,7 +35,12 @@ import geoRoutes from './modules/geo/geo.routes';
 import complaintsRoutes from './modules/complaints/complaints.routes';
 import appointmentSlotsRoutes from './modules/appointment-slots/appointmentSlots.routes';
 import cityCallsHomeHeroRoutes from './modules/websites/city-calls/home-page/hero-carousel/heroSlide.routes';
+import cityCallsHomeOffersRoutes from './modules/websites/city-calls/home-page/offers/offers.routes';
+import cityCallsHomeLaunchSpotlightRoutes from './modules/websites/city-calls/home-page/launch-spotlight/launchSpotlight.routes';
 import cityCallsNavbarRoutes from './modules/websites/city-calls/navbar/navbar.routes';
+import cityCallsServicePageRoutes from './modules/websites/city-calls/pages/servicePage.routes';
+import registrationsRoutes from './modules/registrations/registrations.routes';
+import cityCallsSeoRoutes from './modules/websites/city-calls/seo/seoMeta.routes';
 
 export function createApp(): Application {
   const app = express();
@@ -91,7 +96,12 @@ export function createApp(): Application {
   app.use('/api/v1', complaintsRoutes);
   app.use('/api/v1', appointmentSlotsRoutes);
   app.use('/api/v1', cityCallsHomeHeroRoutes);
+  app.use('/api/v1', cityCallsHomeOffersRoutes);
+  app.use('/api/v1', cityCallsHomeLaunchSpotlightRoutes);
   app.use('/api/v1', cityCallsNavbarRoutes);
+  app.use('/api/v1', cityCallsServicePageRoutes);
+  app.use('/api/v1', registrationsRoutes);
+  app.use('/api/v1', cityCallsSeoRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
