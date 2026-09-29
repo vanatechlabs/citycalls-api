@@ -101,6 +101,11 @@ export const listRegistrationsQuerySchema = z.object({
 // tabs need counts across every status for the current filter.
 export const registrationStatsQuerySchema = z.object(registrationFilterFields).strict();
 
+// Rows shown on an admin list page — marked read when the page is opened.
+export const markRegistrationsViewedSchema = z.object({
+  ids: z.array(objectIdSchema).min(1).max(200),
+}).strict();
+
 export const bulkDeleteRegistrationsSchema = z.object({
   ids: z.array(objectIdSchema).min(1).max(200),
 }).strict();
