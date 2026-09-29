@@ -41,6 +41,9 @@ import cityCallsNavbarRoutes from './modules/websites/city-calls/navbar/navbar.r
 import cityCallsServicePageRoutes from './modules/websites/city-calls/pages/servicePage.routes';
 import registrationsRoutes from './modules/registrations/registrations.routes';
 import cityCallsSeoRoutes from './modules/websites/city-calls/seo/seoMeta.routes';
+import cityCallsBackgroundRoutes from './modules/websites/city-calls/backgrounds/pageBackground.routes';
+import cityCallsSitemapRoutes from './modules/websites/city-calls/sitemap/sitemap.routes';
+import cityCallsSocialLinksRoutes from './modules/websites/city-calls/social-links/socialLinks.routes';
 
 export function createApp(): Application {
   const app = express();
@@ -102,6 +105,9 @@ export function createApp(): Application {
   app.use('/api/v1', cityCallsServicePageRoutes);
   app.use('/api/v1', registrationsRoutes);
   app.use('/api/v1', cityCallsSeoRoutes);
+  app.use('/api/v1', cityCallsBackgroundRoutes);
+  app.use('/api/v1', cityCallsSitemapRoutes);
+  app.use('/api/v1', cityCallsSocialLinksRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

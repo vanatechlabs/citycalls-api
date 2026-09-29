@@ -6,6 +6,7 @@ import { publicBookingRateLimit } from '../../middleware/rateLimit.middleware';
 import * as controller from './registrations.controller';
 import {
   bulkDeleteRegistrationsSchema,
+  markRegistrationsViewedSchema,
   registrationStatsQuerySchema,
   createRegistrationSchema,
   listRegistrationsQuerySchema,
@@ -38,6 +39,13 @@ router.get(
   authMiddleware,
   requirePermission('customers', 'view'),
   controller.getUnreadRegistrationsHandler
+);
+router.post(
+  `${basePath}/view`,
+  authMiddleware,
+  requirePermission('customers', 'view'),
+  validate(markRegistrationsViewedSchema),
+  controller.markRegistrationsViewedHandler
 );
 router.post(
   `${basePath}/:id/view`,

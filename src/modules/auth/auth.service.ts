@@ -41,13 +41,17 @@ function refreshExpiryDate(): Date {
   return new Date(Date.now() + amount * (unitMs[unit] ?? unitMs.d));
 }
 
-async function issueTokens(user: IUser, meta: SessionMeta): Promise<AuthResult> {
+// expiresAt: omitted on login (a fresh JWT_REFRESH_EXPIRES_IN window); passed
+// on refresh so rotated sessions keep the original login's deadline — the
+// user is logged out JWT_REFRESH_EXPIRES_IN after logging in, not after their
+// last activity.
+async function issueTokens(user: IUser, meta: SessionMeta, expiresAt: Date = refreshExpiryDate()): Promise<AuthResult> {
   const session = await SessionModel.create({
     userId: user._id,
     refreshTokenHash: 'pending',
     device: meta.device,
     ipAddress: meta.ipAddress,
-    expiresAt: refreshExpiryDate(),
+    expiresAt,
   });
 
   let employeeId: string | undefined;
@@ -128,11 +132,11 @@ export async function refresh(refreshToken: string, meta: SessionMeta): Promise<
     throw new UnauthorizedError('Account is no longer active');
   }
 
-  // Rotate: revoke old session, issue a new one.
+  // Rotate: revoke old session, issue a new one with the same login deadline.
   session.revokedAt = new Date();
   await session.save();
 
-  return issueTokens(user, meta);
+  return issueTokens(user, meta, session.expiresAt);
 }
 
 export async function logout(refreshToken: string): Promise<void> {

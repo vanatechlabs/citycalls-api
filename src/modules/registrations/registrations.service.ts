@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import { InvalidTransitionError, NotFoundError } from '../../lib/errors';
 import { NavbarMenuModel } from '../websites/city-calls/navbar/navbarMenu.model';
 import { NavbarServiceModel } from '../websites/city-calls/navbar/navbarService.model';
+import { UserModel } from '../users/users.model';
 import {
   REGISTRATION_STATUSES, REGISTRATION_TRANSITIONS, RegistrationActor, RegistrationModel,
   RegistrationSource, RegistrationStatus,
@@ -37,9 +38,8 @@ async function insertRegistration(data: Record<string, unknown>, source: Registr
         statusHistory: [{ to: 'PENDING', by: actor, at: now }],
         createdBy: actor,
         updatedBy: actor,
-        // Staff entering it themselves have already "seen" it; website
-        // bookings stay unread until someone opens them.
-        ...(source === 'ADMIN' && { viewedAt: now, viewedBy: actor }),
+        // Website and admin entries alike stay unread (sidebar count + popup
+        // for every admin) until someone opens them.
       });
     } catch (error) {
       if (!isDuplicateKeyError(error) || attempt >= 4) throw error;
@@ -76,25 +76,41 @@ export async function createWebsiteRegistration(
   return { registrationNo: registration.registrationNo, serviceName: registration.serviceName };
 }
 
-// Unread = not yet opened in admin. Sidebar badges use byCategory; the
-// popup uses latest to announce new ones.
+// Unread = not yet opened in admin. Sidebar badges use byCategory (and
+// pendingByCategory on each "Pending Registration" link); the popup uses
+// latest to announce new ones.
 export async function getUnreadRegistrations() {
   const filter = { viewedAt: { $exists: false } };
   const [byCategoryRows, latest] = await Promise.all([
-    RegistrationModel.aggregate<{ _id: string | null; count: number }>([
+    RegistrationModel.aggregate<{ _id: { category: string | null; status: RegistrationStatus }; count: number }>([
       { $match: filter },
-      { $group: { _id: '$serviceCategory', count: { $sum: 1 } } },
+      { $group: { _id: { category: '$serviceCategory', status: '$status' }, count: { $sum: 1 } } },
     ]),
     RegistrationModel.find(filter)
       .sort({ createdAt: -1 })
       .limit(10)
-      .select('registrationNo fullName phone serviceName serviceCategory source createdAt')
+      .select('registrationNo fullName phone serviceName serviceCategory source createdBy createdAt')
       .lean(),
   ]);
 
   const byCategory: Record<string, number> = {};
-  for (const row of byCategoryRows) byCategory[row._id ?? 'Uncategorised'] = row.count;
-  return { total: Object.values(byCategory).reduce((sum, n) => sum + n, 0), byCategory, latest };
+  const pendingByCategory: Record<string, number> = {};
+  for (const row of byCategoryRows) {
+    const category = row._id.category ?? 'Uncategorised';
+    byCategory[category] = (byCategory[category] ?? 0) + row.count;
+    if (row._id.status === 'PENDING') pendingByCategory[category] = (pendingByCategory[category] ?? 0) + row.count;
+  }
+  const sum = (counts: Record<string, number>) => Object.values(counts).reduce((total, n) => total + n, 0);
+  return { total: sum(byCategory), byCategory, pendingTotal: sum(pendingByCategory), pendingByCategory, latest };
+}
+
+// Opening a list page marks the unread rows it shows as read.
+export async function markRegistrationsViewed(ids: string[], actor: RegistrationActor) {
+  const result = await RegistrationModel.updateMany(
+    { _id: { $in: ids }, viewedAt: { $exists: false } },
+    { $set: { viewedAt: new Date(), viewedBy: actor } }
+  );
+  return { updated: result.modifiedCount };
 }
 
 // First open in admin marks it read; later opens change nothing.
@@ -169,11 +185,22 @@ export async function listRegistrations(params: ListRegistrationsParams) {
     RegistrationModel.find(filter)
       .sort({ createdAt: -1 })
       .skip((params.page - 1) * params.limit)
-      .limit(params.limit),
+      .limit(params.limit)
+      .lean(),
     RegistrationModel.countDocuments(filter),
   ]);
 
-  return { items, total, page: params.page, limit: params.limit };
+  // "Updated By" shows the person's current role under their name; the
+  // snapshot only keeps the name, so look roles up for this page's rows.
+  const updaterIds = [...new Set(items.map((r) => r.updatedBy?.userId?.toString()).filter(Boolean))];
+  const users = updaterIds.length ? await UserModel.find({ _id: { $in: updaterIds } }).select('role').lean() : [];
+  const roleById = new Map(users.map((u) => [u._id.toString(), u.role]));
+  const withRoles = items.map((r) => {
+    const role = r.updatedBy?.userId && roleById.get(r.updatedBy.userId.toString());
+    return role ? { ...r, updatedBy: { ...r.updatedBy!, role } } : r;
+  });
+
+  return { items: withRoles, total, page: params.page, limit: params.limit };
 }
 
 export async function getRegistrationStats(params: RegistrationFilterParams) {

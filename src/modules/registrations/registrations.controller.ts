@@ -97,6 +97,16 @@ export async function markRegistrationViewedHandler(req: ScopedRequest, res: Res
   }
 }
 
+export async function markRegistrationsViewedHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    const actor = await registrationsService.resolveActor(req.user?.sub);
+    const result = await registrationsService.markRegistrationsViewed(req.body.ids, actor);
+    sendSuccess(res, result, 'Registrations marked as viewed');
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function deleteRegistrationHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
     await registrationsService.deleteRegistration(paramAsString(req.params.id));
