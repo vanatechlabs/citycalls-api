@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import path from 'path';
-import { env } from './config/env';
+import { corsOrigins, env } from './config/env';
 import { errorHandler, notFoundHandler, requestIdMiddleware } from './middleware/error.middleware';
 import { generalApiRateLimit } from './middleware/rateLimit.middleware';
 import authRoutes from './modules/auth/auth.routes';
@@ -51,7 +51,7 @@ export function createApp(): Application {
   }));
   app.use(
     cors({
-      origin: env.corsAllowedOrigins,
+      origin: corsOrigins,
       credentials: true,
     })
   );
