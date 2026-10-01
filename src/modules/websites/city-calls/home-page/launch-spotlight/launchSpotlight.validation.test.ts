@@ -31,6 +31,23 @@ describe('City Calls launch spotlight validation', () => {
     }).success).toBe(false);
   });
 
+  it('lets every field except the id be left empty', () => {
+    const parsed = updateLaunchSpotlightSchema.parse({
+      slides: [{ id: 'draft', image: '', altText: '', badgeText: '', heading: '', subheading: '', link: '', accentColor: '' }],
+    });
+    expect(parsed.slides[0]).toMatchObject({ heading: '', link: '', accentColor: '#7cb342', sortOrder: 0, status: 'ACTIVE' });
+  });
+
+  it('takes an overlay darkness of 0–100, defaulting to null', () => {
+    expect(updateLaunchSpotlightSchema.parse({ slides: [validSlide] }).slides[0].overlayOpacity).toBeNull();
+    expect(updateLaunchSpotlightSchema.parse({ slides: [{ ...validSlide, overlayOpacity: 60 }] }).slides[0].overlayOpacity).toBe(60);
+    expect(updateLaunchSpotlightSchema.safeParse({ slides: [{ ...validSlide, overlayOpacity: 120 }] }).success).toBe(false);
+  });
+
+  it('allows saving with no slides at all', () => {
+    expect(updateLaunchSpotlightSchema.safeParse({ slides: [] }).success).toBe(true);
+  });
+
   it('rejects duplicate slide ids', () => {
     expect(updateLaunchSpotlightSchema.safeParse({
       slides: [validSlide, { ...validSlide }],

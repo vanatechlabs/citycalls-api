@@ -21,8 +21,9 @@ export async function getPublicLaunchSpotlight() {
   const config = await LaunchSpotlightModel.findOne({ key: LAUNCH_SPOTLIGHT_KEY }).lean();
   const slides = config?.slides ?? cloneDefaults();
 
+  // Inactive slides, and slides saved without an image, stay off the website.
   return slides
-    .filter((slide) => slide.status === 'ACTIVE')
+    .filter((slide) => slide.status === 'ACTIVE' && !!slide.image)
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map(({ status: _status, ...slide }) => slide);
 }

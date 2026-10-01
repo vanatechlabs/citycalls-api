@@ -10,9 +10,13 @@ describe('City Calls social links validation', () => {
     expect(result.success).toBe(true);
   });
 
-  it('rejects links that are not http(s)', () => {
-    expect(updateSocialLinksSchema.safeParse({ facebook: 'facebook.com/citycalls' }).success).toBe(false);
+  it('adds https:// to links typed without it', () => {
+    expect(updateSocialLinksSchema.parse({ facebook: 'facebook.com/citycalls' }).facebook).toBe('https://facebook.com/citycalls');
+  });
+
+  it('rejects links that are not websites', () => {
     expect(updateSocialLinksSchema.safeParse({ twitter: 'javascript:alert(1)' }).success).toBe(false);
+    expect(updateSocialLinksSchema.safeParse({ youtube: 'citycalls' }).success).toBe(false);
   });
 
   it('strips spaces and dashes from phone numbers', () => {
@@ -21,8 +25,14 @@ describe('City Calls social links validation', () => {
     expect(parsed.callNumber).toBe('+917428808884');
   });
 
-  it('wants WhatsApp digits only, without +', () => {
-    expect(updateSocialLinksSchema.safeParse({ whatsappNumber: '+917428808884' }).success).toBe(false);
+  it('adds the 91 country code to 10-digit numbers', () => {
+    const parsed = updateSocialLinksSchema.parse({ whatsappNumber: '7428808884', callNumber: '7428808884' });
+    expect(parsed.whatsappNumber).toBe('917428808884');
+    expect(parsed.callNumber).toBe('+917428808884');
+  });
+
+  it('saves WhatsApp as digits only and rejects short numbers', () => {
+    expect(updateSocialLinksSchema.parse({ whatsappNumber: '+917428808884' }).whatsappNumber).toBe('917428808884');
     expect(updateSocialLinksSchema.safeParse({ whatsappNumber: '12345' }).success).toBe(false);
   });
 

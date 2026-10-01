@@ -3,6 +3,10 @@ import { Document, Schema, model } from 'mongoose';
 export const HERO_SLIDE_STATUSES = ['ACTIVE', 'INACTIVE'] as const;
 export type HeroSlideStatus = (typeof HERO_SLIDE_STATUSES)[number];
 
+// Darkness (0–90 %) of the dark gradient over the slide image, at its
+// darkest (bottom) edge. null = the website's default look.
+export const MAX_HERO_OVERLAY_OPACITY = 90;
+
 export interface IHeroSlide extends Document {
   image?: string;
   altText?: string;
@@ -11,6 +15,7 @@ export interface IHeroSlide extends Document {
   titleLine2: string;
   description: string;
   sortOrder: number;
+  overlayOpacity?: number | null;
   status: HeroSlideStatus;
   createdAt: Date;
   updatedAt: Date;
@@ -27,6 +32,7 @@ const heroSlideSchema = new Schema<IHeroSlide>(
     titleLine2: { type: String, required: true, trim: true, maxlength: 120 },
     description: { type: String, required: true, trim: true, maxlength: 500 },
     sortOrder: { type: Number, min: 0, default: 0 },
+    overlayOpacity: { type: Number, min: 0, max: MAX_HERO_OVERLAY_OPACITY, default: null },
     status: { type: String, enum: HERO_SLIDE_STATUSES, default: 'ACTIVE' },
   },
   { timestamps: true }

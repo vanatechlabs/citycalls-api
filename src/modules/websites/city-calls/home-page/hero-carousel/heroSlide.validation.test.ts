@@ -14,6 +14,13 @@ const validSlide = {
 };
 
 describe('City Calls home hero slide validation', () => {
+  it('accepts an overlay darkness from 0 to 90, and null to reset it', () => {
+    expect(createHeroSlideSchema.parse({ ...validSlide, overlayOpacity: 30 }).overlayOpacity).toBe(30);
+    expect(updateHeroSlideSchema.parse({ overlayOpacity: null }).overlayOpacity).toBeNull();
+    expect(updateHeroSlideSchema.safeParse({ overlayOpacity: 95 }).success).toBe(false);
+    expect(updateHeroSlideSchema.safeParse({ overlayOpacity: -1 }).success).toBe(false);
+  });
+
   it('accepts a complete slide and applies defaults', () => {
     const result = createHeroSlideSchema.parse({
       subtitle: validSlide.subtitle,

@@ -4,6 +4,10 @@ export const LAUNCH_SPOTLIGHT_STATUSES = ['ACTIVE', 'INACTIVE'] as const;
 export type LaunchSpotlightStatus = (typeof LAUNCH_SPOTLIGHT_STATUSES)[number];
 
 export const LAUNCH_SPOTLIGHT_KEY = 'home';
+export const DEFAULT_ACCENT_COLOR = '#7cb342';
+// Darkness (0–100 %) of the gradient over the card image at its darkest
+// (bottom) edge. null = the website's default look.
+export const MAX_SPOTLIGHT_OVERLAY_OPACITY = 100;
 
 export interface LaunchSpotlightSlide {
   id: string;
@@ -14,6 +18,7 @@ export interface LaunchSpotlightSlide {
   subheading: string;
   link: string;
   accentColor: string;
+  overlayOpacity?: number | null;
   sortOrder: number;
   status: LaunchSpotlightStatus;
 }
@@ -57,13 +62,16 @@ export const LAUNCH_SPOTLIGHT_DEFAULTS: LaunchSpotlightSlide[] = [
 const launchSpotlightSlideSchema = new Schema<LaunchSpotlightSlide>(
   {
     id: { type: String, required: true, trim: true, maxlength: 80 },
-    image: { type: String, required: true, trim: true, maxlength: 2048 },
-    altText: { type: String, required: true, trim: true, maxlength: 160 },
-    badgeText: { type: String, required: true, trim: true, maxlength: 40 },
-    heading: { type: String, required: true, trim: true, maxlength: 80 },
-    subheading: { type: String, required: true, trim: true, maxlength: 120 },
-    link: { type: String, required: true, trim: true, maxlength: 500 },
-    accentColor: { type: String, required: true, trim: true, maxlength: 7, default: '#7cb342' },
+    // Every field is optional in admin; a slide without an image is kept but
+    // not shown on the website.
+    image: { type: String, trim: true, maxlength: 2048, default: '' },
+    altText: { type: String, trim: true, maxlength: 160, default: '' },
+    badgeText: { type: String, trim: true, maxlength: 40, default: '' },
+    heading: { type: String, trim: true, maxlength: 80, default: '' },
+    subheading: { type: String, trim: true, maxlength: 120, default: '' },
+    link: { type: String, trim: true, maxlength: 500, default: '' },
+    accentColor: { type: String, trim: true, maxlength: 7, default: DEFAULT_ACCENT_COLOR },
+    overlayOpacity: { type: Number, min: 0, max: MAX_SPOTLIGHT_OVERLAY_OPACITY, default: null },
     sortOrder: { type: Number, min: 0, default: 0 },
     status: { type: String, enum: LAUNCH_SPOTLIGHT_STATUSES, default: 'ACTIVE' },
   },
