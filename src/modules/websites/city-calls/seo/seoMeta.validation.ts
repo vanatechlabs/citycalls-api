@@ -17,8 +17,18 @@ const canonicalSchema = z.string().trim().max(500).refine(
   'Canonical must be a full http(s) URL'
 );
 
+// Admins often paste the whole <script type="application/ld+json">…</script>
+// block; keep only the JSON inside it.
+export function stripJsonLdScriptTag(value: string): string {
+  return value
+    .trim()
+    .replace(/^<script\b[^>]*>/i, '')
+    .replace(/<\/script>$/i, '')
+    .trim();
+}
+
 // Empty is fine; anything else must parse as JSON (object or array).
-const jsonLdSchema = z.string().trim().max(20000).refine((value) => {
+const jsonLdSchema = z.string().max(20000).transform(stripJsonLdScriptTag).refine((value) => {
   if (!value) return true;
   try {
     const parsed: unknown = JSON.parse(value);

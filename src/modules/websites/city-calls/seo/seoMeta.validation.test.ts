@@ -20,6 +20,14 @@ describe('City Calls SEO meta validation', () => {
     expect(publicSeoMetaQuerySchema.safeParse({ path: 'services' }).success).toBe(false);
   });
 
+  it('accepts JSON-LD pasted with its <script> tag and stores only the JSON', () => {
+    const parsed = createSeoMetaSchema.parse({
+      pagePath: '/',
+      schemaMarkup: '<script type="application/ld+json">\n{"@context":"https://schema.org","@type":"WebSite"}\n</script>',
+    });
+    expect(parsed.schemaMarkup).toBe('{"@context":"https://schema.org","@type":"WebSite"}');
+  });
+
   it('rejects invalid JSON-LD', () => {
     expect(createSeoMetaSchema.safeParse({ pagePath: '/', schemaMarkup: '{not json' }).success).toBe(false);
     expect(createSeoMetaSchema.safeParse({ pagePath: '/', schemaMarkup: '"just a string"' }).success).toBe(false);
