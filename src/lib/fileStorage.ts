@@ -34,6 +34,7 @@ const CATEGORY_RULES: Record<FileCategory, CategoryRule> = {
   MARKETING_MEDIA: { allowedMimeTypes: [...IMAGE_TYPES, ...VIDEO_TYPES], maxSizeBytes: 20 * 1024 * 1024 },
   WEBSITE_HERO_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
   WEBSITE_SPOTLIGHT_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
+  WEBSITE_FEATURES_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
   NAVBAR_SERVICE_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 5 * 1024 * 1024 },
   WEBSITE_PAGE_HERO_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
   WEBSITE_PAGE_BANNER_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },

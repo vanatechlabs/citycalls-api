@@ -28,6 +28,8 @@ export const FILE_CATEGORIES = [
   'WEBSITE_HERO_IMAGE',
   // Image displayed inside the floating home-page launch spotlight card.
   'WEBSITE_SPOTLIGHT_IMAGE',
+  // Popup image in the home-page Features section.
+  'WEBSITE_FEATURES_IMAGE',
   // Icon/preview image for a navbar dropdown service link (website module).
   'NAVBAR_SERVICE_IMAGE',
   // Hero and lower promotional banner images for CMS-managed service pages.
