@@ -1,7 +1,7 @@
 import { Server as HttpServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { verifyAccessToken } from '../lib/jwt';
-import { env } from '../config/env';
+import { corsOrigins } from '../config/env';
 import { isCustomerRole, resolveOwnCustomerId } from '../lib/ownCustomerScope';
 import { ServiceRequestModel } from '../modules/service-requests/serviceRequests.model';
 
@@ -11,7 +11,7 @@ let io: SocketIOServer | undefined;
 
 export function initRealtime(httpServer: HttpServer): SocketIOServer {
   io = new SocketIOServer(httpServer, {
-    cors: { origin: env.corsAllowedOrigins, credentials: true },
+    cors: { origin: corsOrigins, credentials: true },
   });
 
   io.use((socket, next) => {

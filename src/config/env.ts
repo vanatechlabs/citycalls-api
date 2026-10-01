@@ -56,6 +56,14 @@ export const env = {
   },
 } as const;
 
+// What cors()/socket.io actually allow. Outside production, any localhost port
+// is accepted too — local dev servers (Next/Vite) hop to 3001, 3002, … when
+// their default port is taken, and each hop otherwise shows up as a CORS error.
+export const corsOrigins: (string | RegExp)[] =
+  env.nodeEnv === 'production'
+    ? env.corsAllowedOrigins
+    : [...env.corsAllowedOrigins, /^http:\/\/(localhost|127\.0\.0\.1):\d+$/];
+
 if (env.nodeEnv === 'production') {
   const insecureDefaults = ['dev-access-secret-change-me', 'dev-refresh-secret-change-me'];
   if (insecureDefaults.includes(env.jwtAccessSecret) || insecureDefaults.includes(env.jwtRefreshSecret)) {
