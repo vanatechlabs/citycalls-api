@@ -1,16 +1,24 @@
 import { Document, Schema, Types, model } from 'mongoose';
 
-// Lifecycle: every registration starts PENDING, is moved to ACTIVE (with a
-// note) once the team picks it up, and to COMPLETED (with a note) when done.
-export const REGISTRATION_STATUSES = ['PENDING', 'ACTIVE', 'COMPLETED'] as const;
+// Call lifecycle — every move is made with a note:
+//   NEW (fresh, untouched) → ACTIVE / PENDING / CANCELLED
+//   ACTIVE ⇄ PENDING, either → CLOSED (work done)
+//   CLOSED → REOPENED (with the customer back) → ACTIVE / PENDING / CLOSED
+export const REGISTRATION_STATUSES = ['NEW', 'ACTIVE', 'PENDING', 'REOPENED', 'CLOSED', 'CANCELLED'] as const;
 export type RegistrationStatus = (typeof REGISTRATION_STATUSES)[number];
 
-// The only allowed moves, and which stage note each one records.
-export const REGISTRATION_TRANSITIONS: Record<RegistrationStatus, RegistrationStatus | null> = {
-  PENDING: 'ACTIVE',
-  ACTIVE: 'COMPLETED',
-  COMPLETED: null,
+export const REGISTRATION_TRANSITIONS: Record<RegistrationStatus, RegistrationStatus[]> = {
+  NEW: ['ACTIVE', 'PENDING', 'CANCELLED'],
+  ACTIVE: ['PENDING', 'CLOSED'],
+  PENDING: ['ACTIVE', 'CLOSED'],
+  REOPENED: ['ACTIVE', 'PENDING', 'CLOSED'],
+  CLOSED: ['REOPENED'],
+  CANCELLED: [],
 };
+
+// Bumped when the status set changes; documents below it are upgraded on
+// server start (see registrationLifecycle.migration.ts).
+export const REGISTRATION_LIFECYCLE_VERSION = 2;
 
 // Who did something, snapshotted so the name still shows if the user is
 // later renamed or removed.
@@ -80,7 +88,10 @@ export interface IRegistration extends Document {
 
   couponCode?: string;
   status: RegistrationStatus;
-  // Note written when moving PENDING → ACTIVE, and ACTIVE → COMPLETED.
+  lifecycleVersion?: number;
+  // Note of the latest status move (every move's note is in statusHistory).
+  lastNote?: StageNote;
+  // From the earlier Pending → Active → Completed flow; kept for old records.
   activationNote?: StageNote;
   completionNote?: StageNote;
   statusHistory: StatusHistoryEntry[];
@@ -162,7 +173,9 @@ const registrationSchema = new Schema<IRegistration>(
     timeSlot: { type: String, trim: true, maxlength: 40 },
 
     couponCode: { type: String, trim: true, uppercase: true, maxlength: 40 },
-    status: { type: String, enum: REGISTRATION_STATUSES, default: 'PENDING' },
+    status: { type: String, enum: REGISTRATION_STATUSES, default: 'NEW' },
+    lifecycleVersion: { type: Number, default: REGISTRATION_LIFECYCLE_VERSION },
+    lastNote: { type: stageNoteSchema },
     activationNote: { type: stageNoteSchema },
     completionNote: { type: stageNoteSchema },
     statusHistory: { type: [statusHistorySchema], default: [] },

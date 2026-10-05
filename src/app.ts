@@ -1,3 +1,4 @@
+import { menuAccessGuard } from './middleware/menuAccess.middleware';
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -37,6 +38,11 @@ import appointmentSlotsRoutes from './modules/appointment-slots/appointmentSlots
 import cityCallsHomeHeroRoutes from './modules/websites/city-calls/home-page/hero-carousel/heroSlide.routes';
 import cityCallsHomeOffersRoutes from './modules/websites/city-calls/home-page/offers/offers.routes';
 import cityCallsHomeFeaturesRoutes from './modules/websites/city-calls/home-page/features/features.routes';
+import cityCallsHomeAboutRoutes from './modules/websites/city-calls/home-page/about/about.routes';
+import cityCallsHomePopularPackagesRoutes from './modules/websites/city-calls/home-page/popular-packages/popularPackages.routes';
+import cityCallsHomeOurServicesRoutes from './modules/websites/city-calls/home-page/our-services/ourServices.routes';
+import cityCallsHomeCountersRoutes from './modules/websites/city-calls/home-page/counters/counters.routes';
+import serverAssetsRoutes from './modules/server-assets/serverAssets.routes';
 import cityCallsHomeLaunchSpotlightRoutes from './modules/websites/city-calls/home-page/launch-spotlight/launchSpotlight.routes';
 import cityCallsNavbarRoutes from './modules/websites/city-calls/navbar/navbar.routes';
 import cityCallsServicePageRoutes from './modules/websites/city-calls/pages/servicePage.routes';
@@ -71,6 +77,8 @@ export function createApp(): Application {
     res.status(200).json({ success: true, message: 'ok', data: { env: env.nodeEnv }, meta: null, errors: null });
   });
 
+  // Menu Access: blocks changes behind menus a user wasn't given.
+  app.use('/api/v1', menuAccessGuard);
   app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1', usersRoutes);
   app.use('/api/v1', organizationRoutes);
@@ -102,6 +110,11 @@ export function createApp(): Application {
   app.use('/api/v1', cityCallsHomeHeroRoutes);
   app.use('/api/v1', cityCallsHomeOffersRoutes);
   app.use('/api/v1', cityCallsHomeFeaturesRoutes);
+  app.use('/api/v1', cityCallsHomeAboutRoutes);
+  app.use('/api/v1', cityCallsHomePopularPackagesRoutes);
+  app.use('/api/v1', cityCallsHomeOurServicesRoutes);
+  app.use('/api/v1', cityCallsHomeCountersRoutes);
+  app.use('/api/v1', serverAssetsRoutes);
   app.use('/api/v1', cityCallsHomeLaunchSpotlightRoutes);
   app.use('/api/v1', cityCallsNavbarRoutes);
   app.use('/api/v1', cityCallsServicePageRoutes);

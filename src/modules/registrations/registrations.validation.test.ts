@@ -51,13 +51,17 @@ describe('Registration validation', () => {
   });
 
   it('does not allow status changes through a plain update', () => {
-    expect(updateRegistrationSchema.safeParse({ status: 'COMPLETED' }).success).toBe(false);
+    expect(updateRegistrationSchema.safeParse({ status: 'CLOSED' }).success).toBe(false);
   });
 
   it('transition needs a target stage and a note', () => {
     expect(transitionRegistrationSchema.safeParse({ status: 'ACTIVE', note: 'Technician assigned' }).success).toBe(true);
     expect(transitionRegistrationSchema.safeParse({ status: 'ACTIVE', note: '   ' }).success).toBe(false);
-    expect(transitionRegistrationSchema.safeParse({ status: 'PENDING', note: 'x' }).success).toBe(false);
+    expect(transitionRegistrationSchema.safeParse({ status: 'PENDING', note: 'Customer asked to call back' }).success).toBe(true);
+    expect(transitionRegistrationSchema.safeParse({ status: 'REOPENED', note: 'Issue came back' }).success).toBe(true);
+    // Nothing moves back to New; unknown statuses are rejected.
+    expect(transitionRegistrationSchema.safeParse({ status: 'NEW', note: 'x' }).success).toBe(false);
+    expect(transitionRegistrationSchema.safeParse({ status: 'COMPLETED', note: 'x' }).success).toBe(false);
   });
 
   it('rejects an empty update', () => {

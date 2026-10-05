@@ -2,6 +2,7 @@ import { NextFunction, Response } from 'express';
 import { sendSuccess, paramAsString } from '../../lib/apiResponse';
 import { ScopedRequest } from '../../middleware/permission.middleware';
 import * as registrationsService from './registrations.service';
+import type { RegistrationStatus } from './registration.model';
 
 export async function listRegistrationsHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
@@ -62,9 +63,9 @@ export async function updateRegistrationHandler(req: ScopedRequest, res: Respons
 export async function transitionRegistrationHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
     const actor = await registrationsService.resolveActor(req.user?.sub);
-    const { status, note } = req.body as { status: 'ACTIVE' | 'COMPLETED'; note: string };
+    const { status, note } = req.body as { status: RegistrationStatus; note: string };
     const registration = await registrationsService.transitionRegistration(paramAsString(req.params.id), status, note, actor);
-    sendSuccess(res, registration, `Registration moved to ${status.toLowerCase()}`);
+    sendSuccess(res, registration, `Call moved to ${status.toLowerCase()}`);
   } catch (error) {
     next(error);
   }

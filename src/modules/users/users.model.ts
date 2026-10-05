@@ -17,6 +17,10 @@ export interface IUser extends Document {
     emailMarketing: 'GRANTED' | 'REVOKED' | 'NOT_ASKED';
   };
   lastLoginAt?: Date;
+  // Admin sidebar menus this user sees, as "<Section>::<Menu>" keys (set from
+  // Admin Section → Menu Access). Unset = every menu their role allows.
+  // Only hides menus — page access is still enforced by role permissions.
+  menuAccess?: string[];
   // Unset on the bootstrap Super Admin created directly by the seed script
   // (not through this model's create flow) — shown as "System (seed)" on
   // the frontend, not backfilled.
@@ -47,6 +51,8 @@ const userSchema = new Schema<IUser>(
       emailMarketing: { type: String, enum: ['GRANTED', 'REVOKED', 'NOT_ASKED'], default: 'NOT_ASKED' },
     },
     lastLoginAt: { type: Date },
+    // default undefined: not stored until Menu Access is first saved.
+    menuAccess: { type: [String], default: undefined },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
     updatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },

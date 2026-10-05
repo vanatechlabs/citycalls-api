@@ -34,8 +34,8 @@ async function insertRegistration(data: Record<string, unknown>, source: Registr
         ...data,
         registrationNo: buildRegistrationNo(),
         source,
-        status: 'PENDING',
-        statusHistory: [{ to: 'PENDING', by: actor, at: now }],
+        status: 'NEW',
+        statusHistory: [{ to: 'NEW', by: actor, at: now }],
         createdBy: actor,
         updatedBy: actor,
         // Website and admin entries alike stay unread (sidebar count + popup
@@ -77,8 +77,8 @@ export async function createWebsiteRegistration(
 }
 
 // Unread = not yet opened in admin. Sidebar badges use byCategory (and
-// pendingByCategory on each "Pending Registration" link); the popup uses
-// latest to announce new ones.
+// newByCategory on each "New Call" link); the popup uses latest to announce
+// new ones.
 export async function getUnreadRegistrations() {
   const filter = { viewedAt: { $exists: false } };
   const [byCategoryRows, latest] = await Promise.all([
@@ -94,14 +94,14 @@ export async function getUnreadRegistrations() {
   ]);
 
   const byCategory: Record<string, number> = {};
-  const pendingByCategory: Record<string, number> = {};
+  const newByCategory: Record<string, number> = {};
   for (const row of byCategoryRows) {
     const category = row._id.category ?? 'Uncategorised';
     byCategory[category] = (byCategory[category] ?? 0) + row.count;
-    if (row._id.status === 'PENDING') pendingByCategory[category] = (pendingByCategory[category] ?? 0) + row.count;
+    if (row._id.status === 'NEW') newByCategory[category] = (newByCategory[category] ?? 0) + row.count;
   }
   const sum = (counts: Record<string, number>) => Object.values(counts).reduce((total, n) => total + n, 0);
-  return { total: sum(byCategory), byCategory, pendingTotal: sum(pendingByCategory), pendingByCategory, latest };
+  return { total: sum(byCategory), byCategory, newTotal: sum(newByCategory), newByCategory, latest };
 }
 
 // Opening a list page marks the unread rows it shows as read.
@@ -228,7 +228,7 @@ export async function getRegistrationStats(params: RegistrationFilterParams) {
   const byStatus = Object.fromEntries(REGISTRATION_STATUSES.map((s) => [s, 0])) as Record<RegistrationStatus, number>;
   for (const row of byStatusRows) byStatus[row._id] = row.count;
 
-  // { "Home Appliance": { PENDING: 3, ACTIVE: 1, COMPLETED: 0 }, ... }
+  // { "Home Appliance": { NEW: 3, ACTIVE: 1, PENDING: 0, ... }, ... }
   const byCategory: Record<string, Record<RegistrationStatus, number>> = {};
   for (const row of byCategoryRows) {
     const category = row._id.category ?? 'Uncategorised';
@@ -266,7 +266,8 @@ export async function updateRegistration(id: string, data: Record<string, unknow
   return registration;
 }
 
-// PENDING → ACTIVE (activation note) and ACTIVE → COMPLETED (completion note).
+// Moves a call to another status with a note; only the moves in
+// REGISTRATION_TRANSITIONS are allowed.
 export async function transitionRegistration(
   id: string,
   to: RegistrationStatus,
@@ -277,13 +278,11 @@ export async function transitionRegistration(
   if (!registration) throw new NotFoundError('Registration not found');
 
   const from = registration.status;
-  const allowed = REGISTRATION_TRANSITIONS[from];
-  if (allowed !== to) throw new InvalidTransitionError(from, allowed ? [allowed] : []);
+  const allowed = REGISTRATION_TRANSITIONS[from] ?? [];
+  if (!allowed.includes(to)) throw new InvalidTransitionError(from, allowed);
 
   const now = new Date();
-  const stageNote = { note, by: actor, at: now };
-  if (to === 'ACTIVE') registration.activationNote = stageNote;
-  if (to === 'COMPLETED') registration.completionNote = stageNote;
+  registration.lastNote = { note, by: actor, at: now };
   registration.status = to;
   registration.statusHistory.push({ from, to, note, by: actor, at: now });
   registration.updatedBy = actor;

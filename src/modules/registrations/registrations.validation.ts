@@ -72,9 +72,10 @@ export const updateRegistrationSchema = z.object(registrationFields).partial().e
   message: 'At least one field must be supplied',
 });
 
-// PENDING → ACTIVE and ACTIVE → COMPLETED, each with a required note.
+// Moves a call to another status (which moves are allowed depends on its
+// current status — checked by the service). Always with a note.
 export const transitionRegistrationSchema = z.object({
-  status: z.enum(['ACTIVE', 'COMPLETED']),
+  status: z.enum(['ACTIVE', 'PENDING', 'REOPENED', 'CLOSED', 'CANCELLED']),
   note: z.string().trim().min(1, 'Please write a note').max(1000),
 }).strict();
 

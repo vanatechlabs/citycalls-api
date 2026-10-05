@@ -1,3 +1,4 @@
+import { clearMenuAccessCache } from '../../middleware/menuAccess.middleware';
 import { UserModel } from './users.model';
 import { CustomRoleModel } from './customRoles.model';
 import { RolePermissionModel } from '../config/rolePermissions.model';
@@ -354,6 +355,19 @@ export async function updateUser(id: string, data: Record<string, unknown>, acto
     await SessionModel.updateMany({ userId: id, revokedAt: { $exists: false } }, { revokedAt: new Date() });
   }
 
+  return user;
+}
+
+// Which admin sidebar menus a user sees; null clears the list (all menus).
+export async function updateMenuAccess(id: string, menuAccess: string[] | null, actorId: string) {
+  const update = menuAccess === null
+    ? { $unset: { menuAccess: 1 }, $set: { updatedBy: actorId } }
+    : { $set: { menuAccess: [...new Set(menuAccess)], updatedBy: actorId } };
+  clearMenuAccessCache(id);
+  const user = await UserModel.findByIdAndUpdate(id, update, { new: true })
+    .populate('createdBy', 'name')
+    .populate('updatedBy', 'name');
+  if (!user) throw new NotFoundError('User not found');
   return user;
 }
 

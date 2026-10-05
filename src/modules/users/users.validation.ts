@@ -75,3 +75,8 @@ export const createCustomRoleSchema = z.object({
 export const updateCustomRoleStatusSchema = z.object({
   status: z.enum(['ACTIVE', 'INACTIVE']),
 });
+
+// Admin Section → Menu Access. null removes the restriction (all menus).
+export const updateMenuAccessSchema = z.object({
+  menuAccess: z.array(z.string().trim().min(1).max(160)).max(300).nullable(),
+}).strict();

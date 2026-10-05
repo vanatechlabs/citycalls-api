@@ -1,7 +1,5 @@
 // One-time migration for registrations created before the PENDING → ACTIVE →
 // COMPLETED lifecycle:
-//   - status NEW / CONTACTED → PENDING, CONFIRMED → ACTIVE (COMPLETED kept;
-//     CANCELLED has no new equivalent and is reported, not changed)
 //   - createdBy stored as a bare user id → { userId, name } snapshot
 //   - updatedBy / statusHistory filled in from createdBy when missing
 // Idempotent — safe to run again.
@@ -13,7 +11,10 @@ import { connectDb, disconnectDb } from '../src/lib/db';
 import { RegistrationModel } from '../src/modules/registrations/registration.model';
 import { UserModel } from '../src/modules/users/users.model';
 
-const STATUS_MAP: Record<string, string> = { NEW: 'PENDING', CONTACTED: 'PENDING', CONFIRMED: 'ACTIVE' };
+// Status values are now upgraded on server start by
+// src/modules/registrations/registrationLifecycle.migration.ts (NEW is a live
+// status again), so this script no longer renames any.
+const STATUS_MAP: Record<string, string> = {};
 
 async function main() {
   await connectDb();
@@ -23,8 +24,6 @@ async function main() {
     const result = await col.updateMany({ status: from }, { $set: { status: to } });
     if (result.modifiedCount) console.log(`[migrate] status ${from} → ${to}: ${result.modifiedCount}`);
   }
-  const cancelled = await col.countDocuments({ status: 'CANCELLED' });
-  if (cancelled) console.warn(`[migrate] ${cancelled} CANCELLED registration(s) left as-is — review them manually.`);
 
   const legacy = await col.find({ createdBy: { $type: 'objectId' } }).toArray();
   for (const doc of legacy) {

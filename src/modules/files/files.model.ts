@@ -30,6 +30,14 @@ export const FILE_CATEGORIES = [
   'WEBSITE_SPOTLIGHT_IMAGE',
   // Popup image in the home-page Features section.
   'WEBSITE_FEATURES_IMAGE',
+  // The three images of the home-page About section.
+  'WEBSITE_ABOUT_IMAGE',
+  // Card image of a home-page Popular Package.
+  'WEBSITE_PACKAGE_IMAGE',
+  // Card image of a home-page Our Services card.
+  'WEBSITE_SERVICE_CARD_IMAGE',
+  // Background image of a home-page counter card.
+  'WEBSITE_COUNTER_IMAGE',
   // Icon/preview image for a navbar dropdown service link (website module).
   'NAVBAR_SERVICE_IMAGE',
   // Hero and lower promotional banner images for CMS-managed service pages.

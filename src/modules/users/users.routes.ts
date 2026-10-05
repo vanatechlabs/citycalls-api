@@ -13,6 +13,7 @@ import {
   updateRolePermissionSchema,
   createCustomRoleSchema,
   updateCustomRoleStatusSchema,
+  updateMenuAccessSchema,
 } from './users.validation';
 import * as ctrl from './users.controller';
 
@@ -30,6 +31,15 @@ function requireSuperAdminOnly(req: ScopedRequest, _res: Response, next: NextFun
 }
 
 router.get('/users', authMiddleware, requirePermission('users', 'view'), validate(listUsersQuerySchema, 'query'), ctrl.listUsersHandler);
+// Choosing which sidebar menus someone sees is an access-control screen, so
+// only Super Admin may change it (same gate as role permissions).
+router.put(
+  '/users/:id/menu-access',
+  authMiddleware,
+  requireSuperAdminOnly,
+  validate(updateMenuAccessSchema),
+  ctrl.updateMenuAccessHandler
+);
 router.get('/users/:id', authMiddleware, requirePermission('users', 'view'), ctrl.getUserHandler);
 router.post('/users', authMiddleware, requirePermission('users', 'create'), validate(createUserSchema), ctrl.createUserHandler);
 router.patch('/users/:id', authMiddleware, requirePermission('users', 'edit'), validate(updateUserSchema), ctrl.updateUserHandler);

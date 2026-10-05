@@ -51,6 +51,16 @@ export async function updateUserHandler(req: ScopedRequest, res: Response, next:
   }
 }
 
+export async function updateMenuAccessHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) throw new UnauthorizedError();
+    const user = await userService.updateMenuAccess(paramAsString(req.params.id), req.body.menuAccess, req.user.sub);
+    sendSuccess(res, user, 'Menu access updated successfully');
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function deleteUserHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
     if (!req.user) throw new UnauthorizedError();
