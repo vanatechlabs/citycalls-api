@@ -34,6 +34,7 @@ import searchRoutes from './modules/search/search.routes';
 import geoRoutes from './modules/geo/geo.routes';
 import complaintsRoutes from './modules/complaints/complaints.routes';
 import appointmentSlotsRoutes from './modules/appointment-slots/appointmentSlots.routes';
+import customerAppHomeBannerRoutes from './modules/customer-app/home-banners/homeBanner.routes';
 import cityCallsHomeHeroRoutes from './modules/websites/city-calls/home-page/hero-carousel/heroSlide.routes';
 import cityCallsHomeOffersRoutes from './modules/websites/city-calls/home-page/offers/offers.routes';
 import cityCallsHomeFeaturesRoutes from './modules/websites/city-calls/home-page/features/features.routes';
@@ -99,6 +100,7 @@ export function createApp(): Application {
   app.use('/api/v1', geoRoutes);
   app.use('/api/v1', complaintsRoutes);
   app.use('/api/v1', appointmentSlotsRoutes);
+  app.use('/api/v1', customerAppHomeBannerRoutes);
   app.use('/api/v1', cityCallsHomeHeroRoutes);
   app.use('/api/v1', cityCallsHomeOffersRoutes);
   app.use('/api/v1', cityCallsHomeFeaturesRoutes);
