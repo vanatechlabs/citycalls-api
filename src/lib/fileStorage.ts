@@ -40,6 +40,8 @@ const CATEGORY_RULES: Record<FileCategory, CategoryRule> = {
   WEBSITE_PAGE_BANNER_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
   WEBSITE_SEO_OG_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 5 * 1024 * 1024 },
   APP_HOME_BANNER_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
+  APP_SALON_BANNER_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
+  APP_HELPNOW_BANNER_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
 };
 
 export function assertFileAllowed(category: FileCategory, mimeType: string, sizeBytes: number): void {
