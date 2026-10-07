@@ -1,4 +1,3 @@
-import { randomInt } from 'crypto';
 import { Types } from 'mongoose';
 import { InvalidTransitionError, NotFoundError } from '../../lib/errors';
 import { NavbarMenuModel } from '../websites/city-calls/navbar/navbarMenu.model';
@@ -8,19 +7,10 @@ import {
   REGISTRATION_STATUSES, REGISTRATION_TRANSITIONS, RegistrationActor, RegistrationModel,
   RegistrationSource, RegistrationStatus,
 } from './registration.model';
+import { nextRegistrationNo } from './registrationNumber';
 
 // Shared with other modules; re-exported so the controller keeps one import.
 export { resolveActor } from '../../lib/actor';
-
-// REG-260929-4821 style: date for easy reading over the phone, random tail
-// for uniqueness. Retries on the (rare) unique-index collision.
-function buildRegistrationNo() {
-  const now = new Date();
-  const date = [now.getFullYear() % 100, now.getMonth() + 1, now.getDate()]
-    .map((n) => String(n).padStart(2, '0'))
-    .join('');
-  return `REG-${date}-${randomInt(1000, 10000)}`;
-}
 
 function isDuplicateKeyError(error: unknown) {
   return typeof error === 'object' && error !== null && (error as { code?: number }).code === 11000;
@@ -32,7 +22,9 @@ async function insertRegistration(data: Record<string, unknown>, source: Registr
     try {
       return await RegistrationModel.create({
         ...data,
-        registrationNo: buildRegistrationNo(),
+        // CC2026100705 style, from Settings → Registration Number. A retry
+        // takes the next number, so a clash with an older one just skips it.
+        registrationNo: await nextRegistrationNo(),
         source,
         status: 'NEW',
         statusHistory: [{ to: 'NEW', by: actor, at: now }],

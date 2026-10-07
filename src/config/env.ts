@@ -42,6 +42,13 @@ export const env = {
     completionOtpCampaign: process.env.AISENSY_COMPLETION_OTP_CAMPAIGN,
     festivalCampaign: process.env.AISENSY_FESTIVAL_CAMPAIGN,
     independenceDayCampaign: process.env.AISENSY_INDEPENDENCE_DAY_CAMPAIGN,
+    // Website Quick Book → "booking received" WhatsApp to the customer.
+    quickBookingCampaign: process.env.AISENSY_QUICK_BOOKING_CAMPAIGN || 'CityCalls Booking Received',
+    // Template header image (JPG/PNG — WhatsApp doesn't take WebP).
+    quickBookingMediaUrl: process.env.AISENSY_QUICK_BOOKING_MEDIA_URL || 'https://citycalls.in/og-image.jpg',
+    // Contact page "Send a Message" → "enquiry received" WhatsApp.
+    contactEnquiryCampaign: process.env.AISENSY_CONTACT_ENQUIRY_CAMPAIGN || 'CItyCalls Contact Enquire',
+    contactEnquiryMediaUrl: process.env.AISENSY_CONTACT_ENQUIRY_MEDIA_URL || 'https://citycalls.in/og-image.jpg',
   },
   ai: {
     enabled: process.env.AI_ENABLED === 'true',

@@ -9,10 +9,12 @@ import { startHappyCallSchedulerInterval } from './jobs/happyCallScheduler';
 import { startCampaignSchedulerInterval } from './jobs/campaignScheduler';
 import { env } from './config/env';
 import { upgradeRegistrationLifecycle } from './modules/registrations/registrationLifecycle.migration';
+import { renameMenuAccessKeys } from './modules/users/menuAccessRename.migration';
 
 async function main(): Promise<void> {
   await connectDb();
   await upgradeRegistrationLifecycle();
+  await renameMenuAccessKeys();
   const permissionCount = await loadPermissionCache();
   const transitionCount = await loadStatusEngineCache();
 
