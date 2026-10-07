@@ -45,6 +45,12 @@ export const FILE_CATEGORIES = [
   'WEBSITE_PAGE_BANNER_IMAGE',
   // Social share (og:image) picture for a page's SEO entry.
   'WEBSITE_SEO_OG_IMAGE',
+  // Background image for a customer mobile app home-screen banner.
+  'APP_HOME_BANNER_IMAGE',
+  // Background image for a customer mobile app Salon-tab banner.
+  'APP_SALON_BANNER_IMAGE',
+  // Background image for a customer mobile app HelpNow-tab banner.
+  'APP_HELPNOW_BANNER_IMAGE',
 ] as const;
 export type FileCategory = (typeof FILE_CATEGORIES)[number];
 
