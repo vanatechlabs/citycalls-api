@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "seed": "ts-node-dev --transpile-only scripts/seed.ts",
     "seed:navbar": "ts-node-dev --transpile-only scripts/seedNavbarServices.ts",
+    "seed:home-banners": "ts-node-dev --transpile-only scripts/seedCustomerAppHomeBanners.ts",
     "migrate:registrations": "ts-node-dev --transpile-only scripts/migrateRegistrationStatuses.ts"
   },
   "keywords": [],

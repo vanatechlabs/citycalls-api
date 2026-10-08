@@ -3,6 +3,7 @@ import * as configService from './config.service';
 import { sendSuccess, paramAsString } from '../../lib/apiResponse';
 import { ScopedRequest } from '../../middleware/permission.middleware';
 import { MasterType } from './master.model';
+import { UnauthorizedError } from '../../lib/errors';
 
 export async function listMastersHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
@@ -36,9 +37,10 @@ export async function updateMasterHandler(req: ScopedRequest, res: Response, nex
 
 export async function deleteMasterHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
+    if (!req.user) throw new UnauthorizedError();
     const masterType = req.params.masterType as MasterType;
-    await configService.deleteMaster(masterType, paramAsString(req.params.id));
-    sendSuccess(res, null, 'Master entry deactivated successfully');
+    await configService.deleteMaster(masterType, paramAsString(req.params.id), req.user);
+    sendSuccess(res, null, 'Master entry deleted successfully');
   } catch (err) {
     next(err);
   }

@@ -46,6 +46,9 @@ const CATEGORY_RULES: Record<FileCategory, CategoryRule> = {
   WEBSITE_BLOG_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
   WEBSITE_BLOG_OG_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 5 * 1024 * 1024 },
   WEBSITE_FAQ_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 5 * 1024 * 1024 },
+  APP_HOME_BANNER_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
+  APP_SALON_BANNER_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
+  APP_HELPNOW_BANNER_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
 };
 
 export function assertFileAllowed(category: FileCategory, mimeType: string, sizeBytes: number): void {
@@ -62,7 +65,7 @@ export function assertFileAllowed(category: FileCategory, mimeType: string, size
   }
 }
 
-function folderFor(entityType: string, entityId: string, category: FileCategory): string {
+export function folderFor(entityType: string, entityId: string, category: FileCategory): string {
   return `${env.nodeEnv}/${entityType}/${entityId}/${category}`;
 }
 
