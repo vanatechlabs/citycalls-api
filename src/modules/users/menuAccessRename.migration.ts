@@ -6,6 +6,7 @@ import { UserModel } from './users.model';
 // old key, so running it again changes nothing.
 const RENAMED_MENUS: Record<string, string> = {
   'Registration Section::New Registration': 'Registration Section::New Call',
+  'Website Section::Key Features': 'Website Section::Why Choose Us',
 };
 
 export async function renameMenuAccessKeys() {

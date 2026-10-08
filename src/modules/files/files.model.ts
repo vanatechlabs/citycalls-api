@@ -45,6 +45,9 @@ export const FILE_CATEGORIES = [
   'WEBSITE_PAGE_BANNER_IMAGE',
   // Social share (og:image) picture for a page's SEO entry.
   'WEBSITE_SEO_OG_IMAGE',
+  'WEBSITE_BLOG_IMAGE',
+  'WEBSITE_BLOG_OG_IMAGE',
+  'WEBSITE_FAQ_IMAGE',
 ] as const;
 export type FileCategory = (typeof FILE_CATEGORIES)[number];
 

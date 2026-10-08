@@ -45,6 +45,9 @@ import cityCallsHomeCountersRoutes from './modules/websites/city-calls/home-page
 import serverAssetsRoutes from './modules/server-assets/serverAssets.routes';
 import enquiriesRoutes from './modules/enquiries/enquiries.routes';
 import cityCallsHomeTestimonialsRoutes from './modules/websites/city-calls/home-page/testimonials/testimonials.routes';
+import cityCallsBlogsRoutes from './modules/websites/city-calls/blogs/blogs.routes';
+import cityCallsHomeFaqRoutes from './modules/websites/city-calls/home-page/faq/faq.routes';
+import cityCallsHomeKeyFeaturesRoutes from './modules/websites/city-calls/home-page/key-features/keyFeatures.routes';
 import registrationNumberRoutes from './modules/registrations/registrationNumber.routes';
 import cityCallsHomeLaunchSpotlightRoutes from './modules/websites/city-calls/home-page/launch-spotlight/launchSpotlight.routes';
 import cityCallsNavbarRoutes from './modules/websites/city-calls/navbar/navbar.routes';
@@ -120,6 +123,9 @@ export function createApp(): Application {
   app.use('/api/v1', serverAssetsRoutes);
   app.use('/api/v1', enquiriesRoutes);
   app.use('/api/v1', cityCallsHomeTestimonialsRoutes);
+  app.use('/api/v1', cityCallsBlogsRoutes);
+  app.use('/api/v1', cityCallsHomeFaqRoutes);
+  app.use('/api/v1', cityCallsHomeKeyFeaturesRoutes);
   app.use('/api/v1', registrationNumberRoutes);
   app.use('/api/v1', cityCallsHomeLaunchSpotlightRoutes);
   app.use('/api/v1', cityCallsNavbarRoutes);

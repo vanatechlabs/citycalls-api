@@ -18,9 +18,14 @@ export interface BackgroundPageGroup {
   pages: BackgroundPageOption[];
 }
 
+// Website pages outside Navbar List that also show a background hero (not
+// the individual blog posts — those use their own feature image).
+const OTHER_PAGES_GROUP = 'Other Pages';
+const OTHER_PAGES: { path: string; name: string }[] = [{ path: '/blogs', name: 'Blogs' }];
+
 // Every service page from Navbar List, one group per menu — these are the
 // pages that render the background hero, so a new navlink shows up here as
-// soon as it's added.
+// soon as it's added — plus the other pages above.
 export async function listBackgroundPageOptions(): Promise<BackgroundPageGroup[]> {
   const [menus, services, backgrounds] = await Promise.all([
     NavbarMenuModel.find().sort({ sortOrder: 1, createdAt: 1 }).lean(),
@@ -41,6 +46,10 @@ export async function listBackgroundPageOptions(): Promise<BackgroundPageGroup[]
       }));
     if (pages.length > 0) groups.push({ group: menu.name, pages });
   }
+  groups.push({
+    group: OTHER_PAGES_GROUP,
+    pages: OTHER_PAGES.map((p) => ({ ...p, backgroundId: idByPath.get(p.path) })),
+  });
   return groups;
 }
 
@@ -51,9 +60,10 @@ async function pageLookup() {
     NavbarServiceModel.find().select('path name menuId').lean(),
   ]);
   const menuNames = new Map(menus.map((m) => [m._id.toString(), m.name]));
-  const pages = new Map(
-    services.map((s) => [s.path.toLowerCase(), { pageName: s.name, menuName: menuNames.get(s.menuId.toString()) }])
-  );
+  const pages = new Map([
+    ...services.map((s) => [s.path.toLowerCase(), { pageName: s.name, menuName: menuNames.get(s.menuId.toString()) }] as const),
+    ...OTHER_PAGES.map((p) => [p.path, { pageName: p.name, menuName: OTHER_PAGES_GROUP }] as const),
+  ]);
   return (path: string) => pages.get(path) ?? { pageName: path, menuName: undefined };
 }
 
