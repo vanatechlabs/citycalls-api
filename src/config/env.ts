@@ -49,6 +49,9 @@ export const env = {
     // Contact page "Send a Message" → "enquiry received" WhatsApp.
     contactEnquiryCampaign: process.env.AISENSY_CONTACT_ENQUIRY_CAMPAIGN || 'CItyCalls Contact Enquire',
     contactEnquiryMediaUrl: process.env.AISENSY_CONTACT_ENQUIRY_MEDIA_URL || 'https://citycalls.in/og-image.jpg',
+    // Service page booking form → "service request received" WhatsApp.
+    serviceBookingCampaign: process.env.AISENSY_SERVICE_BOOKING_CAMPAIGN || 'CityCalls Services Received',
+    serviceBookingMediaUrl: process.env.AISENSY_SERVICE_BOOKING_MEDIA_URL || 'https://citycalls.in/og-image.jpg',
   },
   ai: {
     enabled: process.env.AI_ENABLED === 'true',

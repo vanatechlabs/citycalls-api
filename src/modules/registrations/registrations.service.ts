@@ -1,5 +1,7 @@
 import { Types } from 'mongoose';
+import { env } from '../../config/env';
 import { InvalidTransitionError, NotFoundError } from '../../lib/errors';
+import { isWhatsAppEnabled, sendWhatsApp } from '../../lib/whatsappAdapter';
 import { NavbarMenuModel } from '../websites/city-calls/navbar/navbarMenu.model';
 import { NavbarServiceModel } from '../websites/city-calls/navbar/navbarService.model';
 import { UserModel } from '../users/users.model';
@@ -64,8 +66,75 @@ export async function createWebsiteRegistration(
     'WEBSITE',
     WEBSITE_ACTOR
   );
+  // Runs in the background — the booking never waits on WhatsApp.
+  void sendBookingWhatsApp(registration._id.toString(), {
+    phone: registration.phone,
+    name: registration.fullName,
+    registrationNo: registration.registrationNo,
+    params: serviceBookingWhatsAppParams(registration),
+  });
   // Only what the customer needs to see on the thank-you screen.
   return { registrationNo: registration.registrationNo, serviceName: registration.serviceName };
+}
+
+const firstNameOf = (name: string) => name.trim().split(/\s+/)[0] || 'there';
+
+// "12 Oct 2026" in India time.
+const formatBookingDate = (date: Date) =>
+  new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }).format(date);
+
+// AiSensy campaign "CityCalls Services Received" (approved template):
+//   {{1}} first name · {{2}} service · {{3}} problem · {{4}} preferred slot · {{5}} booking ID
+export function serviceBookingWhatsAppParams(input: {
+  fullName: string;
+  serviceName: string;
+  issues?: string[];
+  issueDescription?: string;
+  preferredDate?: Date | null;
+  timeSlot?: string | null;
+  registrationNo: string;
+}) {
+  const issues = (input.issues ?? []).map((i) => i.trim()).filter(Boolean);
+  const problem = issues.length ? issues.join(', ') : input.issueDescription?.trim() || 'General service';
+  const date = input.preferredDate && !Number.isNaN(new Date(input.preferredDate).getTime()) ? formatBookingDate(new Date(input.preferredDate)) : '';
+  const slot = [date, input.timeSlot?.trim()].filter(Boolean).join(', ') || 'To be confirmed by our team';
+  // WhatsApp template values can't be very long or hold new lines.
+  const clean = (value: string, max: number) => {
+    const flat = value.replace(/\s+/g, ' ').trim();
+    return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
+  };
+  return [firstNameOf(input.fullName), clean(input.serviceName, 100), clean(problem, 200), clean(slot, 80), input.registrationNo];
+}
+
+// Sends the "we got your service request" WhatsApp (CityCalls banner as the
+// header image) and saves the result on the registration. Never throws.
+async function sendBookingWhatsApp(
+  registrationId: string,
+  input: { phone: string; name: string; registrationNo: string; params: string[] }
+) {
+  let whatsapp: { status: 'SENT' | 'FAILED' | 'SKIPPED'; at: Date; error?: string };
+  if (!isWhatsAppEnabled()) {
+    whatsapp = { status: 'SKIPPED', at: new Date() };
+  } else {
+    try {
+      await sendWhatsApp({
+        to: input.phone,
+        campaignName: env.aisensy.serviceBookingCampaign,
+        userName: input.name,
+        variables: input.params,
+        source: 'website-service-booking',
+        media: { url: env.aisensy.serviceBookingMediaUrl, filename: 'citycalls.jpg' },
+      });
+      whatsapp = { status: 'SENT', at: new Date() };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`[registrations] WhatsApp "${env.aisensy.serviceBookingCampaign}" failed for ${input.registrationNo}: ${message}`);
+      whatsapp = { status: 'FAILED', at: new Date(), error: message.slice(0, 500) };
+    }
+  }
+  await RegistrationModel.updateOne({ _id: registrationId }, { $set: { whatsapp } }).catch((error: unknown) => {
+    console.error('[registrations] could not save WhatsApp status', error);
+  });
 }
 
 // Unread = not yet opened in admin. Sidebar badges use byCategory (and

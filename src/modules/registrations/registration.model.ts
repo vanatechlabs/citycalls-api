@@ -102,6 +102,8 @@ export interface IRegistration extends Document {
   // the new-registration popup. Admin-created ones start read.
   viewedAt?: Date;
   viewedBy?: RegistrationActor;
+  // Website bookings: the "service request received" WhatsApp to the customer.
+  whatsapp?: { status: 'SENT' | 'FAILED' | 'SKIPPED'; at: Date; error?: string };
   createdBy?: RegistrationActor;
   // Last person to change anything (edit or status move) — "Updated By".
   updatedBy?: RegistrationActor;
@@ -185,6 +187,12 @@ const registrationSchema = new Schema<IRegistration>(
     },
     viewedAt: { type: Date },
     viewedBy: { type: actorSchema },
+    whatsapp: {
+      type: new Schema(
+        { status: { type: String, enum: ['SENT', 'FAILED', 'SKIPPED'] }, at: { type: Date }, error: { type: String, maxlength: 500 } },
+        { _id: false }
+      ),
+    },
     createdBy: { type: actorSchema },
     updatedBy: { type: actorSchema },
   },
