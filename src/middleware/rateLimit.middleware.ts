@@ -1,4 +1,5 @@
 import rateLimit from 'express-rate-limit';
+import { env } from '../config/env';
 
 // Limits per docs/17-security-and-audit.md §4.
 export const authRateLimit = rateLimit({
@@ -17,9 +18,11 @@ export const authRateLimit = rateLimit({
 // Per docs/17-security-and-audit.md §4: 3/10min per mobile number, ideally — this is
 // IP-scoped for now (express-rate-limit's default keying); per-identifier limiting
 // would need a custom store keyed by request body, not yet built.
+// Request AND verify both count, so 5 is only ~2 logins — fine for production,
+// but it silently stops OTPs during local testing; development allows 50.
 export const otpRateLimit = rateLimit({
   windowMs: 10 * 60 * 1000,
-  limit: 5,
+  limit: env.nodeEnv === 'production' ? 5 : 50,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
