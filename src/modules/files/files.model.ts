@@ -48,6 +48,10 @@ export const FILE_CATEGORIES = [
   'WEBSITE_BLOG_IMAGE',
   'WEBSITE_BLOG_OG_IMAGE',
   'WEBSITE_FAQ_IMAGE',
+  // Photo on a home page "How It Works" step card.
+  'WEBSITE_HOW_IT_WORKS_IMAGE',
+  // Any photo on the website's /about page (hero, story, parallax, journey).
+  'WEBSITE_ABOUT_PAGE_IMAGE',
   // Background image for a customer mobile app home-screen banner.
   'APP_HOME_BANNER_IMAGE',
   // Background image for a customer mobile app Salon-tab banner.

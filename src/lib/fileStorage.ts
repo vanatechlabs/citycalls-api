@@ -46,6 +46,8 @@ const CATEGORY_RULES: Record<FileCategory, CategoryRule> = {
   WEBSITE_BLOG_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
   WEBSITE_BLOG_OG_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 5 * 1024 * 1024 },
   WEBSITE_FAQ_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 5 * 1024 * 1024 },
+  WEBSITE_HOW_IT_WORKS_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
+  WEBSITE_ABOUT_PAGE_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
   APP_HOME_BANNER_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
   APP_SALON_BANNER_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
   APP_HELPNOW_BANNER_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
