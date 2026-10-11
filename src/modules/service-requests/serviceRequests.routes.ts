@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authMiddleware } from '../../middleware/auth.middleware';
-import { requirePermission } from '../../middleware/permission.middleware';
+import { optionalPermission, requirePermission } from '../../middleware/permission.middleware';
 import { validate } from '../../middleware/validate.middleware';
 import {
   createServiceRequestSchema,
@@ -21,7 +21,7 @@ const router = Router();
 
 router.get('/service-requests', authMiddleware, requirePermission('serviceRequests', 'view'), validate(listServiceRequestsQuerySchema, 'query'), ctrl.listServiceRequestsHandler);
 router.get('/service-requests/:id', authMiddleware, requirePermission('serviceRequests', 'view'), ctrl.getServiceRequestHandler);
-router.post('/service-requests', authMiddleware, requirePermission('serviceRequests', 'create'), validate(createServiceRequestSchema), ctrl.createServiceRequestHandler);
+router.post('/service-requests', authMiddleware, optionalPermission('serviceRequests', 'create'), validate(createServiceRequestSchema), ctrl.createServiceRequestHandler);
 router.patch('/service-requests/:id/status', authMiddleware, requirePermission('serviceRequests', 'edit'), validate(changeStatusSchema), ctrl.changeStatusHandler);
 router.patch('/service-requests/:id/reschedule', authMiddleware, requirePermission('serviceRequests', 'edit'), validate(rescheduleSchema), ctrl.rescheduleHandler);
 router.delete('/service-requests/:id', authMiddleware, requirePermission('serviceRequests', 'edit'), ctrl.deleteServiceRequestHandler);

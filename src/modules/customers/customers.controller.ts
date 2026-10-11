@@ -47,6 +47,84 @@ export async function getOwnCustomerHandler(req: ScopedRequest, res: Response, n
 // Customer record via findOrCreateOwnCustomer already guarantees the token
 // can only ever affect the caller's own document, so there's no separate
 // scope check needed here (unlike every :id-taking handler above).
+export async function updateOwnCustomerHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) throw new UnauthorizedError();
+    const ownCustomer = await customerService.findOrCreateOwnCustomer(req.user.sub);
+    const customer = await customerService.updateCustomer(ownCustomer.id, req.body);
+    sendSuccess(res, customer, 'Customer profile updated successfully');
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function addOwnAddressHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) throw new UnauthorizedError();
+    const ownCustomer = await customerService.findOrCreateOwnCustomer(req.user.sub);
+    const customer = await customerService.addAddress(ownCustomer.id, req.body);
+    sendSuccess(res, customer, 'Address added successfully', null, 201);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateOwnAddressHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) throw new UnauthorizedError();
+    const ownCustomer = await customerService.findOrCreateOwnCustomer(req.user.sub);
+    const customer = await customerService.updateAddress(ownCustomer.id, paramAsString(req.params.addressId), req.body);
+    sendSuccess(res, customer, 'Address updated successfully');
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteOwnAddressHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) throw new UnauthorizedError();
+    const ownCustomer = await customerService.findOrCreateOwnCustomer(req.user.sub);
+    const customer = await customerService.deleteAddress(ownCustomer.id, paramAsString(req.params.addressId));
+    sendSuccess(res, customer, 'Address deleted successfully');
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function listOwnProductsHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) throw new UnauthorizedError();
+    const ownCustomer = await customerService.findOrCreateOwnCustomer(req.user.sub);
+    const products = await customerService.listProducts(ownCustomer.id);
+    sendSuccess(res, products, 'Products fetched successfully');
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function addOwnProductHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) throw new UnauthorizedError();
+    const ownCustomer = await customerService.findOrCreateOwnCustomer(req.user.sub);
+    const product = await customerService.addProduct(ownCustomer.id, req.body);
+    sendSuccess(res, product, 'Product added successfully', null, 201);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateOwnConsentHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) throw new UnauthorizedError();
+    const ownCustomer = await customerService.findOrCreateOwnCustomer(req.user.sub);
+    const { channel, state, reason } = req.body as { channel: 'whatsapp' | 'email' | 'sms'; state: 'GRANTED' | 'REVOKED' | 'NOT_ASKED'; reason?: string };
+    const customer = await customerService.updateConsent(ownCustomer.id, channel, state, reason, req.user);
+    sendSuccess(res, customer, 'Consent updated successfully');
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function registerFcmTokenHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
     if (!req.user) throw new UnauthorizedError();
