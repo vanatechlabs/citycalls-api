@@ -3,10 +3,12 @@ import { z } from 'zod';
 export const loginSchema = z.object({
   identifier: z.string().min(3, 'Enter an email or mobile number'),
   password: z.string().min(1, 'Password is required'),
+  deviceName: z.string().trim().min(1).max(120).optional(),
 });
 
 export const refreshSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token is required'),
+  deviceName: z.string().trim().min(1).max(120).optional(),
 });
 
 export const otpRequestSchema = z.object({
@@ -16,6 +18,7 @@ export const otpRequestSchema = z.object({
 export const otpVerifySchema = z.object({
   mobile: z.string().min(10, 'Enter a valid mobile number'),
   otp: z.string().length(6, 'Enter the 6-digit OTP'),
+  deviceName: z.string().trim().min(1).max(120).optional(),
 });
 
 export const passwordResetRequestSchema = z.object({

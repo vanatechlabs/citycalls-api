@@ -12,17 +12,17 @@ import {
 import { AuthenticatedRequest } from '../../middleware/auth.middleware';
 import { UnauthorizedError } from '../../lib/errors';
 
-function sessionMeta(req: AuthenticatedRequest) {
+function sessionMeta(req: AuthenticatedRequest, deviceName?: string) {
   return {
-    device: req.headers['user-agent'],
+    device: deviceName?.trim() || req.headers['user-agent'],
     ipAddress: req.ip,
   };
 }
 
 export async function loginHandler(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { identifier, password } = req.body as LoginInput;
-    const result = await authService.login(identifier, password, sessionMeta(req));
+    const { identifier, password, deviceName } = req.body as LoginInput;
+    const result = await authService.login(identifier, password, sessionMeta(req, deviceName));
     sendSuccess(res, result, 'Login successful');
   } catch (err) {
     next(err);
@@ -31,8 +31,8 @@ export async function loginHandler(req: AuthenticatedRequest, res: Response, nex
 
 export async function refreshHandler(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { refreshToken } = req.body as RefreshInput;
-    const result = await authService.refresh(refreshToken, sessionMeta(req));
+    const { refreshToken, deviceName } = req.body as RefreshInput;
+    const result = await authService.refresh(refreshToken, sessionMeta(req, deviceName));
     sendSuccess(res, result, 'Token refreshed successfully');
   } catch (err) {
     next(err);
@@ -61,8 +61,8 @@ export async function otpRequestHandler(req: AuthenticatedRequest, res: Response
 
 export async function otpVerifyHandler(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { mobile, otp } = req.body as OtpVerifyInput;
-    const result = await authService.verifyOtp(mobile, otp, sessionMeta(req));
+    const { mobile, otp, deviceName } = req.body as OtpVerifyInput;
+    const result = await authService.verifyOtp(mobile, otp, sessionMeta(req, deviceName));
     sendSuccess(res, result, 'Login successful');
   } catch (err) {
     next(err);
