@@ -168,7 +168,7 @@ export async function convertLead(id: string, input: ConvertInput, actor: Access
         source: 'LEAD_CONVERSION',
         relatedLeadId: lead._id.toString(),
       },
-      actor.sub
+      actor
     );
 
     lead.stage = 'CONVERTED';

@@ -71,7 +71,9 @@ const PERMISSIONS: PermissionRow[] = [
   ...allFor('TEAM_LEAD', ['employees'], ['view'], 'TEAM'),
   ...allFor('TEAM_LEAD', ['customers', 'serviceRequests'], ['view', 'edit'], 'TEAM'),
   ...allFor('TEAM_LEAD', ['fieldExecution'], ['view'], 'TEAM'),
+  ...allFor('TEAM_LEAD', ['config'], ['view'], 'ALL'),
   ...allFor('EMPLOYEE', ['customers'], ['view'], 'TEAM'),
+  ...allFor('EMPLOYEE', ['config'], ['view'], 'ALL'),
   ...allFor('EMPLOYEE', ['catalog'], ['view'], 'ALL'),
   ...allFor('EMPLOYEE', ['employees'], ['view', 'edit'], 'OWN'), // GET /employees/me + FCM token register for vendor-mobile
   ...allFor('EMPLOYEE', ['serviceRequests', 'fieldExecution', 'files'], ['view', 'edit'], 'OWN'),
@@ -83,6 +85,7 @@ const PERMISSIONS: PermissionRow[] = [
   ...allFor('TECHNICIAN', ['files'], ['create'], 'OWN'),
   ...allFor('TECHNICIAN', ['finance'], ['view', 'create', 'edit'], 'OWN'),
   ...allFor('TECHNICIAN', ['happyCalls'], ['view', 'edit'], 'OWN'),
+  ...allFor('TECHNICIAN', ['config'], ['view'], 'ALL'),
   ...allFor('TECHNICIAN', ['catalog'], ['view'], 'ALL'),
 
   // Call Executive: creates/edits customers, calls, and service requests (booking
@@ -124,15 +127,18 @@ const PERMISSIONS: PermissionRow[] = [
   // plus reassign within their own team (accept/reject/reassign a technician).
   ...allFor('VENDOR_OWNER', ['vendors'], ['view', 'edit', 'viewFinancial'], 'VENDOR'),
   ...allFor('VENDOR_OWNER', ['customers', 'catalog'], ['view'], 'VENDOR'),
+  ...allFor('VENDOR_OWNER', ['config'], ['view'], 'ALL'),
   ...allFor('VENDOR_OWNER', ['serviceRequests', 'fieldExecution'], ['view', 'edit', 'assign'], 'VENDOR'),
   ...allFor('VENDOR_OWNER', ['files'], ['view', 'create'], 'VENDOR'),
   ...allFor('VENDOR_MANAGER', ['vendors'], ['view', 'edit'], 'VENDOR'),
   ...allFor('VENDOR_MANAGER', ['customers', 'catalog'], ['view'], 'VENDOR'),
+  ...allFor('VENDOR_MANAGER', ['config'], ['view'], 'ALL'),
   ...allFor('VENDOR_MANAGER', ['serviceRequests', 'fieldExecution'], ['view', 'edit', 'assign'], 'VENDOR'),
   ...allFor('VENDOR_MANAGER', ['files'], ['view', 'create'], 'VENDOR'),
 
   // Vendor Technician / Outsourced Partner: sees and updates only what's assigned to them.
   ...allFor('VENDOR_TECHNICIAN', ['customers', 'catalog'], ['view'], 'OWN'),
+  ...allFor('VENDOR_TECHNICIAN', ['config'], ['view'], 'ALL'),
   ...allFor('VENDOR_TECHNICIAN', ['serviceRequests', 'fieldExecution', 'files'], ['view', 'edit'], 'OWN'),
   ...allFor('VENDOR_TECHNICIAN', ['files'], ['create'], 'OWN'),
   ...allFor('VENDOR_TECHNICIAN', ['happyCalls'], ['view', 'edit'], 'OWN'),
