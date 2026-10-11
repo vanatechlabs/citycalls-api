@@ -288,7 +288,7 @@ async function resolveBranch(serviceId: string, pinCode: string): Promise<IBranc
   });
 }
 
-export async function createServiceRequest(data: Record<string, unknown> & { addressSnapshot: { pinCode: string } }, createdBy: string) {
+export async function createServiceRequest(data: Record<string, unknown> & { addressSnapshot: { pinCode: string } }, actor: AccessTokenPayload) {
   const branch = await resolveBranch(data.serviceId as string, data.addressSnapshot.pinCode);
   const service = await ServiceModel.findById(data.serviceId);
 
@@ -307,7 +307,16 @@ export async function createServiceRequest(data: Record<string, unknown> & { add
     branchId: branch?._id,
     status: branch ? 'ASSIGNED_TO_BRANCH' : 'NEEDS_MANUAL_BRANCH_ASSIGNMENT',
     sla: { dueAt },
-    createdBy,
+    createdBy: actor.sub,
+  });
+
+  await logActivity({
+    entityType: 'SERVICE_REQUEST',
+    entityId: sr._id.toString(),
+    user: actor,
+    action: 'CREATED',
+    module: 'service-requests',
+    reason: branch ? 'Request received and routed to service branch' : 'Request received; branch assignment pending',
   });
 
   await trigger('SERVICE_REQUEST_CREATED', {

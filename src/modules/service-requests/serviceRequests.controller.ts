@@ -62,7 +62,7 @@ export async function createServiceRequestHandler(req: ScopedRequest, res: Respo
       }
       body.customerId = ownCustomer.id;
     }
-    const sr = await srService.createServiceRequest(body, req.user.sub);
+    const sr = await srService.createServiceRequest(body, req.user);
     sendSuccess(res, sr, 'Service request created successfully', null, 201);
   } catch (err) {
     next(err);
