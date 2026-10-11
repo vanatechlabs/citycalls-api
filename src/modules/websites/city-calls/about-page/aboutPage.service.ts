@@ -51,9 +51,10 @@ async function ensureJourneySeeded() {
 }
 
 // ─── Single-block sections (admin) ─────────────────────────────────────────
+// `pageId` is what admin links uploaded photos to (files need a real id).
 export async function getBlock<B extends Block>(block: B) {
   const page = await ensurePage();
-  return { ...BLOCK_DEFAULTS[block], ...(page[block] ?? {}) };
+  return { ...BLOCK_DEFAULTS[block], ...(page[block] ?? {}), pageId: String(page._id) };
 }
 
 async function saveBlock<B extends Block>(block: B, data: object, actor: ActorSnapshot) {
@@ -63,7 +64,7 @@ async function saveBlock<B extends Block>(block: B, data: object, actor: ActorSn
     { $set: { [block]: { ...data, updatedBy: actor, updatedAt: new Date() } } },
     { new: true, runValidators: true }
   ).lean();
-  return { ...BLOCK_DEFAULTS[block], ...(page?.[block] ?? {}) };
+  return { ...BLOCK_DEFAULTS[block], ...(page?.[block] ?? {}), pageId: page ? String(page._id) : undefined };
 }
 
 export const updateHero = (data: UpdateAboutHeroInput, actor: ActorSnapshot) => saveBlock('hero', data, actor);

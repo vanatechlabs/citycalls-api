@@ -21,7 +21,10 @@ export interface BackgroundPageGroup {
 // Website pages outside Navbar List that also show a background hero (not
 // the individual blog posts — those use their own feature image).
 const OTHER_PAGES_GROUP = 'Other Pages';
-const OTHER_PAGES: { path: string; name: string }[] = [{ path: '/blogs', name: 'Blogs' }];
+const OTHER_PAGES: { path: string; name: string }[] = [
+  { path: '/services', name: 'All Services' },
+  { path: '/blogs', name: 'Blogs' },
+];
 
 // Every service page from Navbar List, one group per menu — these are the
 // pages that render the background hero, so a new navlink shows up here as
