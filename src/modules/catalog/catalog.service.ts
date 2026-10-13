@@ -31,10 +31,20 @@ interface ListParams {
 export async function listServices(params: ListParams) {
   const filter: Record<string, unknown> = {};
   if (params.active !== undefined) filter.active = params.active;
-  if (params.categoryId) filter.categoryId = params.categoryId;
+  if (params.categoryId && params.categoryId.trim()) {
+    filter.categoryId = params.categoryId.trim();
+  } else if (params.vertical) {
+    filter.categoryId = { $in: await resolveVerticalCategoryIds(params.vertical) };
+  }
   if (params.productTypeId) filter.applicableProductTypeIds = params.productTypeId;
-  if (params.q) filter.name = { $regex: params.q, $options: 'i' };
-  if (params.vertical) filter.categoryId = { $in: await resolveVerticalCategoryIds(params.vertical) };
+
+  if (params.q && params.q.trim()) {
+    const escaped = params.q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    filter.$or = [
+      { name: { $regex: escaped, $options: 'i' } },
+      { description: { $regex: escaped, $options: 'i' } },
+    ];
+  }
 
   const skip = (params.page - 1) * params.limit;
   const [items, total] = await Promise.all([

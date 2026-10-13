@@ -7,6 +7,7 @@ export const createServiceSchema = z.object({
   subCategoryId: z.string().optional(),
   applicableBrandIds: z.array(z.string()).default([]),
   applicableProductTypeIds: z.array(z.string()).default([]),
+  complaintTypeIds: z.array(z.string()).default([]),
   symptomIds: z.array(z.string()).default([]),
   defectIds: z.array(z.string()).default([]),
   solutionTypeIds: z.array(z.string()).default([]),
@@ -37,6 +38,7 @@ export const updateServiceSchema = z.object({
   subCategoryId: z.string().optional(),
   applicableBrandIds: z.array(z.string()).optional(),
   applicableProductTypeIds: z.array(z.string()).optional(),
+  complaintTypeIds: z.array(z.string()).optional(),
   symptomIds: z.array(z.string()).optional(),
   defectIds: z.array(z.string()).optional(),
   solutionTypeIds: z.array(z.string()).optional(),
@@ -63,7 +65,12 @@ export const updateServiceSchema = z.object({
 export const listServicesQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
-  active: z.coerce.boolean().optional(),
+  active: z
+    .preprocess((val) => {
+      if (val === 'true' || val === true) return true;
+      if (val === 'false' || val === false) return false;
+      return undefined;
+    }, z.boolean().optional()),
   categoryId: z.string().optional(),
   productTypeId: z.string().optional(),
   pinCode: z.string().optional(),

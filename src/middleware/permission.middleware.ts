@@ -26,3 +26,14 @@ export function requirePermission(moduleName: string, action: string) {
     next();
   };
 }
+
+export function optionalPermission(moduleName: string, action: string) {
+  return (req: ScopedRequest, _res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      next(new UnauthorizedError());
+      return;
+    }
+    req.scope = getDataScope(req.user.role, moduleName, action);
+    next();
+  };
+}

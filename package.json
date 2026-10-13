@@ -14,6 +14,9 @@
     "seed": "ts-node-dev --transpile-only scripts/seed.ts",
     "seed:navbar": "ts-node-dev --transpile-only scripts/seedNavbarServices.ts",
     "seed:home-banners": "ts-node-dev --transpile-only scripts/seedCustomerAppHomeBanners.ts",
+    "seed:customer-app-services": "ts-node-dev --transpile-only scripts/seedCustomerAppServices.ts",
+    "seed:delhi-ghaziabad-coverage": "ts-node-dev --transpile-only scripts/seedDelhiGhaziabadCoverage.ts",
+    "grant:customer-app-lookup-permissions": "ts-node-dev --transpile-only scripts/grantCustomerAppLookupPermissions.ts",
     "migrate:registrations": "ts-node-dev --transpile-only scripts/migrateRegistrationStatuses.ts"
   },
   "keywords": [],

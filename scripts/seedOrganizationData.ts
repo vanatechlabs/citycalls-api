@@ -11,6 +11,23 @@ export interface BranchSeed {
   states: string[];
   subBranches: SubBranchSeed[];
 }
+
+function pinRange(start: number, end: number): string[] {
+  return Array.from({ length: end - start + 1 }, (_, index) =>
+    String(start + index).padStart(6, '0')
+  );
+}
+
+export const DELHI_PIN_CODES = pinRange(110001, 110099);
+
+export const GHAZIABAD_PIN_CODES = [
+  ...pinRange(201001, 201017),
+  '201102',
+  '201201',
+  '201204',
+  '201206',
+];
+
 export const BRANCH_SEED_DATA: BranchSeed[] = [
   {
     code: 'DELCS',
@@ -18,14 +35,9 @@ export const BRANCH_SEED_DATA: BranchSeed[] = [
     cities: ['New Delhi', 'South Delhi'],
     states: ['Delhi'],
     subBranches: [
-      { code: 'DEL-CP', name: 'Connaught Place', pinCodes: ['110001'] },
-      { code: 'DEL-KB', name: 'Karol Bagh', pinCodes: ['110005'] },
-      { code: 'DEL-HKS', name: 'Hauz Khas', pinCodes: ['110016'] },
-      { code: 'DEL-SKT', name: 'Saket', pinCodes: ['110017'] },
-      { code: 'DEL-GK', name: 'Greater Kailash', pinCodes: ['110048'] },
-      { code: 'DEL-LAJ', name: 'Lajpat Nagar', pinCodes: ['110024'] },
-      { code: 'DEL-VK', name: 'Vasant Kunj', pinCodes: ['110070'] },
-      { code: 'DEL-VV', name: 'Vasant Vihar', pinCodes: ['110057'] },
+      { code: 'DEL-CP', name: 'Central Delhi', pinCodes: pinRange(110001, 110012) },
+      { code: 'DEL-SD1', name: 'South Delhi - Inner', pinCodes: pinRange(110013, 110025) },
+      { code: 'DEL-SD2', name: 'South Delhi - Outer', pinCodes: pinRange(110026, 110033) },
     ],
   },
   {
@@ -34,13 +46,9 @@ export const BRANCH_SEED_DATA: BranchSeed[] = [
     cities: ['North Delhi', 'East Delhi'],
     states: ['Delhi'],
     subBranches: [
-      { code: 'DEL-ROH', name: 'Rohini', pinCodes: ['110085'] },
-      { code: 'DEL-PIT', name: 'Pitampura', pinCodes: ['110034'] },
-      { code: 'DEL-MDT', name: 'Model Town', pinCodes: ['110009'] },
-      { code: 'DEL-CVL', name: 'Civil Lines', pinCodes: ['110054'] },
-      { code: 'DEL-PRV', name: 'Preet Vihar', pinCodes: ['110092'] },
-      { code: 'DEL-MYV', name: 'Mayur Vihar', pinCodes: ['110091'] },
-      { code: 'DEL-SHD', name: 'Shahdara', pinCodes: ['110032'] },
+      { code: 'DEL-ND1', name: 'North Delhi - Inner', pinCodes: pinRange(110034, 110045) },
+      { code: 'DEL-ND2', name: 'North Delhi - Outer', pinCodes: pinRange(110046, 110056) },
+      { code: 'DEL-ED1', name: 'East Delhi - Inner', pinCodes: pinRange(110057, 110066) },
     ],
   },
   {
@@ -49,10 +57,9 @@ export const BRANCH_SEED_DATA: BranchSeed[] = [
     cities: ['West Delhi'],
     states: ['Delhi'],
     subBranches: [
-      { code: 'DEL-RJG', name: 'Rajouri Garden', pinCodes: ['110027'] },
-      { code: 'DEL-JNP', name: 'Janakpuri', pinCodes: ['110058'] },
-      { code: 'DEL-DWK', name: 'Dwarka', pinCodes: ['110075'] },
-      { code: 'DEL-PJB', name: 'Punjabi Bagh', pinCodes: ['110026'] },
+      { code: 'DEL-WD1', name: 'West Delhi - Inner', pinCodes: pinRange(110067, 110078) },
+      { code: 'DEL-WD2', name: 'West Delhi - Outer', pinCodes: pinRange(110079, 110089) },
+      { code: 'DEL-WD3', name: 'Delhi Extended Coverage', pinCodes: pinRange(110090, 110099) },
     ],
   },
   {
@@ -97,10 +104,10 @@ export const BRANCH_SEED_DATA: BranchSeed[] = [
     cities: ['Ghaziabad'],
     states: ['Uttar Pradesh'],
     subBranches: [
-      { code: 'GZB-VAI', name: 'Vaishali', pinCodes: ['201010'] },
-      { code: 'GZB-IND', name: 'Indirapuram', pinCodes: ['201014'] },
-      { code: 'GZB-KSB', name: 'Kaushambi', pinCodes: ['201010'] },
-      { code: 'GZB-RNE', name: 'Raj Nagar Extension', pinCodes: ['201017'] },
+      { code: 'GZB-CEN', name: 'Ghaziabad Central', pinCodes: pinRange(201001, 201006) },
+      { code: 'GZB-TNH', name: 'Trans Hindon', pinCodes: pinRange(201007, 201012) },
+      { code: 'GZB-EXT', name: 'Ghaziabad Extension', pinCodes: ['201013', '201014', '201015', '201016', '201017'] },
+      { code: 'GZB-OUT', name: 'Ghaziabad Outer Coverage', pinCodes: ['201102', '201201', '201204', '201206'] },
     ],
   },
 

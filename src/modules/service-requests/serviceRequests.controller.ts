@@ -1,10 +1,11 @@
 import { Response, NextFunction } from 'express';
 import * as srService from './serviceRequests.service';
 import * as happyCallsService from '../follow-up/happyCalls.service';
+import * as customerService from '../customers/customers.service';
 import { rankAssignmentCandidates } from '../../lib/assignmentEngine';
 import { sendSuccess, paramAsString } from '../../lib/apiResponse';
 import { ScopedRequest } from '../../middleware/permission.middleware';
-import { UnauthorizedError, InvalidTransitionError } from '../../lib/errors';
+import { ForbiddenError, UnauthorizedError, InvalidTransitionError } from '../../lib/errors';
 import { ServiceRequestStatus } from './serviceRequests.model';
 
 export async function listServiceRequestsHandler(req: ScopedRequest, res: Response, next: NextFunction) {
@@ -49,7 +50,19 @@ export async function submitFeedbackHandler(req: ScopedRequest, res: Response, n
 export async function createServiceRequestHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
     if (!req.user) throw new UnauthorizedError();
-    const sr = await srService.createServiceRequest(req.body, req.user.sub);
+    const body = { ...req.body };
+    if (!req.scope) {
+      if (body.source !== 'CUSTOMER_APP') {
+        throw new ForbiddenError(`Role ${req.user.role} lacks permission for serviceRequests.create`);
+      }
+      const ownCustomer = await customerService.findOrCreateOwnCustomer(req.user.sub);
+      const requestedCustomerId = body.customerId?.toString();
+      if (requestedCustomerId && requestedCustomerId !== ownCustomer.id) {
+        throw new ForbiddenError('Customer app bookings can only be created for the signed-in user');
+      }
+      body.customerId = ownCustomer.id;
+    }
+    const sr = await srService.createServiceRequest(body, req.user);
     sendSuccess(res, sr, 'Service request created successfully', null, 201);
   } catch (err) {
     next(err);
