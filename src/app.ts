@@ -47,6 +47,7 @@ import cityCallsHomeOurServicesRoutes from './modules/websites/city-calls/home-p
 import cityCallsHomeCountersRoutes from './modules/websites/city-calls/home-page/counters/counters.routes';
 import serverAssetsRoutes from './modules/server-assets/serverAssets.routes';
 import enquiriesRoutes from './modules/enquiries/enquiries.routes';
+import callEnquiryRoutes from './modules/call-enquiries/callEnquiry.routes';
 import cityCallsHomeTestimonialsRoutes from './modules/websites/city-calls/home-page/testimonials/testimonials.routes';
 import cityCallsBlogsRoutes from './modules/websites/city-calls/blogs/blogs.routes';
 import cityCallsHomeFaqRoutes from './modules/websites/city-calls/home-page/faq/faq.routes';
@@ -54,12 +55,14 @@ import cityCallsHomeKeyFeaturesRoutes from './modules/websites/city-calls/home-p
 import cityCallsHomeHowItWorksRoutes from './modules/websites/city-calls/home-page/how-it-works/howItWorks.routes';
 import cityCallsAboutPageRoutes from './modules/websites/city-calls/about-page/aboutPage.routes';
 import registrationNumberRoutes from './modules/registrations/registrationNumber.routes';
+import cityCallsSiteSettingsRoutes from './modules/websites/city-calls/site-settings/siteSettings.routes';
 import cityCallsHomeLaunchSpotlightRoutes from './modules/websites/city-calls/home-page/launch-spotlight/launchSpotlight.routes';
 import cityCallsNavbarRoutes from './modules/websites/city-calls/navbar/navbar.routes';
 import cityCallsServicePageRoutes from './modules/websites/city-calls/pages/servicePage.routes';
 import registrationsRoutes from './modules/registrations/registrations.routes';
 import cityCallsSeoRoutes from './modules/websites/city-calls/seo/seoMeta.routes';
 import cityCallsBackgroundRoutes from './modules/websites/city-calls/backgrounds/pageBackground.routes';
+import cityCallsParallaxRoutes from './modules/websites/city-calls/parallax/pageParallax.routes';
 import cityCallsSitemapRoutes from './modules/websites/city-calls/sitemap/sitemap.routes';
 import cityCallsSocialLinksRoutes from './modules/websites/city-calls/social-links/socialLinks.routes';
 
@@ -130,6 +133,7 @@ export function createApp(): Application {
   app.use('/api/v1', cityCallsHomeCountersRoutes);
   app.use('/api/v1', serverAssetsRoutes);
   app.use('/api/v1', enquiriesRoutes);
+  app.use('/api/v1', callEnquiryRoutes);
   app.use('/api/v1', cityCallsHomeTestimonialsRoutes);
   app.use('/api/v1', cityCallsBlogsRoutes);
   app.use('/api/v1', cityCallsHomeFaqRoutes);
@@ -137,12 +141,14 @@ export function createApp(): Application {
   app.use('/api/v1', cityCallsHomeHowItWorksRoutes);
   app.use('/api/v1', cityCallsAboutPageRoutes);
   app.use('/api/v1', registrationNumberRoutes);
+  app.use('/api/v1', cityCallsSiteSettingsRoutes);
   app.use('/api/v1', cityCallsHomeLaunchSpotlightRoutes);
   app.use('/api/v1', cityCallsNavbarRoutes);
   app.use('/api/v1', cityCallsServicePageRoutes);
   app.use('/api/v1', registrationsRoutes);
   app.use('/api/v1', cityCallsSeoRoutes);
   app.use('/api/v1', cityCallsBackgroundRoutes);
+  app.use('/api/v1', cityCallsParallaxRoutes);
   app.use('/api/v1', cityCallsSitemapRoutes);
   app.use('/api/v1', cityCallsSocialLinksRoutes);
 
