@@ -65,7 +65,12 @@ export const updateServiceSchema = z.object({
 export const listServicesQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
-  active: z.coerce.boolean().optional(),
+  active: z
+    .preprocess((val) => {
+      if (val === 'true' || val === true) return true;
+      if (val === 'false' || val === false) return false;
+      return undefined;
+    }, z.boolean().optional()),
   categoryId: z.string().optional(),
   productTypeId: z.string().optional(),
   pinCode: z.string().optional(),
