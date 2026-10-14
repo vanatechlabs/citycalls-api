@@ -10,11 +10,13 @@ import { startCampaignSchedulerInterval } from './jobs/campaignScheduler';
 import { env } from './config/env';
 import { upgradeRegistrationLifecycle } from './modules/registrations/registrationLifecycle.migration';
 import { renameMenuAccessKeys } from './modules/users/menuAccessRename.migration';
+import { mergeSofaCleaningIntoHomeCleaning } from './modules/websites/city-calls/navbar/sofaCleaningMerge.migration';
 
 async function main(): Promise<void> {
   await connectDb();
   await upgradeRegistrationLifecycle();
   await renameMenuAccessKeys();
+  await mergeSofaCleaningIntoHomeCleaning();
   const permissionCount = await loadPermissionCache();
   const transitionCount = await loadStatusEngineCache();
 
