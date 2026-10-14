@@ -79,3 +79,21 @@ export async function checkCoverageHandler(req: ScopedRequest, res: Response, ne
     next(err);
   }
 }
+
+export async function bulkChangeCategoryHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    const result = await catalogService.bulkChangeCategory(req.body.ids, req.body.categoryId);
+    sendSuccess(res, result, 'Services moved to the new category');
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function clearUnusedDiagnosticLinksHandler(_req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    const result = await catalogService.clearUnusedDiagnosticLinks();
+    sendSuccess(res, result, 'Unused diagnostic links cleared');
+  } catch (err) {
+    next(err);
+  }
+}

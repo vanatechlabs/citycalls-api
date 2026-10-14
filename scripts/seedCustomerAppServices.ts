@@ -362,46 +362,12 @@ function uniqueRows(rows: DiagnosticRow[]): DiagnosticRow[] {
   });
 }
 
-function beautyDiagnostics(service: string): DiagnosticRow[] {
-  const lower = service.toLowerCase();
-  if (lower.includes('makeup') || lower.includes('saree') || lower.includes('event')) {
-    return [
-      { service, complaint: 'Event Makeup Needed', symptom: 'Needs Long-Lasting Look', defect: 'No Salon Visit Planned', solution: `${service} Application`, solutionCategory: 'Makeup' },
-      { service, complaint: 'Look Matching Required', symptom: 'Outfit or Occasion Specific Look', defect: 'Makeup Style Not Finalized', solution: `${service} Consultation`, solutionCategory: 'Makeup' },
-    ];
-  }
-  if (lower.includes('hair') || lower.includes('keratin') || lower.includes('root') || lower.includes('color') || lower.includes('dandruff')) {
-    return [
-      { service, complaint: 'Hair Service Needed', symptom: 'Hair Looks Dull or Unmanaged', defect: 'Dryness, Frizz or Growth Issue', solution: `${service} Service`, solutionCategory: 'Hair Care' },
-      { service, complaint: 'Hair Styling Support Needed', symptom: 'Style Not Holding Properly', defect: 'Lack of Professional Finish', solution: `${service} Styling`, solutionCategory: 'Styling' },
-    ];
-  }
-  if (lower.includes('wax') || lower.includes('thread') || lower.includes('eyebrow') || lower.includes('upper lip')) {
-    return [
-      { service, complaint: 'Grooming Service Needed', symptom: 'Unwanted Hair Growth', defect: 'Regular Hair Growth Cycle', solution: `${service} Grooming`, solutionCategory: 'Grooming' },
-      { service, complaint: 'Sensitive Grooming Required', symptom: 'Skin Irritation Concern', defect: 'Harsh Product Reaction', solution: `${service} With Skin Prep`, solutionCategory: 'Grooming' },
-    ];
-  }
-  if (lower.includes('facial') || lower.includes('cleanup') || lower.includes('skin') || lower.includes('bleach') || lower.includes('tan') || lower.includes('polish')) {
-    return [
-      { service, complaint: 'Skin Care Needed', symptom: 'Dullness, Tan or Uneven Texture', defect: 'Dead Skin and Dirt Build-Up', solution: `${service} Treatment`, solutionCategory: 'Skin Care' },
-      { service, complaint: 'Glow Required', symptom: 'Skin Looks Tired', defect: 'Lack of Recent Skin Care', solution: `${service} Session`, solutionCategory: 'Skin Care' },
-    ];
-  }
-  if (lower.includes('mani') || lower.includes('pedi') || lower.includes('nail')) {
-    return [
-      { service, complaint: 'Nail Care Needed', symptom: 'Rough Nails or Dry Cuticles', defect: 'Lack of Regular Nail Care', solution: `${service} Service`, solutionCategory: 'Nail Care' },
-      { service, complaint: 'Hand and Foot Care Needed', symptom: 'Dry Hands or Feet', defect: 'Dead Skin Build-Up', solution: `${service} Care`, solutionCategory: 'Grooming' },
-    ];
-  }
-  return [
-    { service, complaint: 'Beauty Service Needed', symptom: 'At-Home Salon Requirement', defect: 'No Salon Visit Planned', solution: `${service} Service`, solutionCategory: 'Beauty' },
-    { service, complaint: 'Personal Care Support Needed', symptom: 'Grooming Pending', defect: 'Routine Care Due', solution: `${service} At Home`, solutionCategory: 'Beauty' },
-  ];
-}
+// Beauty & Salon and Help Now are plain book-and-go services: there is no
+// complaint/symptom/defect/solution chain to link, so they get none.
+const CATEGORIES_WITHOUT_DIAGNOSTICS: CategoryKey[] = ['BEAUTY_SALOON', 'HELP_NOW'];
 
 function genericDiagnostics(seed: ServiceSeed): DiagnosticRow[] {
-  if (seed.category === 'BEAUTY_SALOON') return beautyDiagnostics(seed.name);
+  if (CATEGORIES_WITHOUT_DIAGNOSTICS.includes(seed.category)) return [];
 
   if (seed.category === 'HOME_CLEANING') {
     return [
@@ -596,6 +562,12 @@ async function main() {
     );
     if (res.matchedCount > 0) servicesLinked++;
   }
+
+  const cleared = await ServiceModel.updateMany(
+    { categoryId: { $in: CATEGORIES_WITHOUT_DIAGNOSTICS.map((key) => categoryIds.get(key)) } },
+    { $set: { complaintTypeIds: [], symptomIds: [], defectIds: [], solutionTypeIds: [] } }
+  );
+  console.log(`[seed-customer-app-services] services with diagnostic links cleared (Beauty/Help Now): ${cleared.modifiedCount}`);
 
   console.log(`[seed-customer-app-services] categories active: ${CATEGORIES.length}`);
   console.log(`[seed-customer-app-services] services upserted: ${upserted}`);

@@ -77,3 +77,8 @@ export const listServicesQuerySchema = z.object({
   q: z.string().optional(),
   vertical: z.string().optional(),
 });
+
+export const bulkChangeCategorySchema = z.object({
+  ids: z.array(z.string().min(1)).min(1).max(200),
+  categoryId: z.string().min(1),
+});
