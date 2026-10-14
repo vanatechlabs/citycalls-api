@@ -86,20 +86,12 @@ export async function updateService(id: string, data: Record<string, unknown>) {
   return service;
 }
 
-// Moves many services to one category in a single call — the fix for a batch
-// of services that were filed under the wrong category. Validates the target
-// is a real SERVICE_CATEGORY master first so a typo'd id can't orphan them.
 export async function bulkChangeCategory(ids: string[], categoryId: string) {
   const category = await MasterModel.findOne({ _id: categoryId, masterType: 'SERVICE_CATEGORY' }).select('_id');
   if (!category) throw new NotFoundError('Category not found');
   const result = await ServiceModel.updateMany({ _id: { $in: ids } }, { $set: { categoryId } });
   return { matched: result.matchedCount, modified: result.modifiedCount };
 }
-
-// Beauty & Salon and Help Now are plain book-and-go services with no
-// complaint/symptom/defect/solution chain, but older data still has them
-// linked. One call clears those links for every service in those categories
-// (matched by category key, or the BEAUTY vertical) - safe to run repeatedly.
 const CATEGORY_KEYS_WITHOUT_DIAGNOSTICS = ['BEAUTY_SALOON', 'HELP_NOW'];
 
 export async function clearUnusedDiagnosticLinks() {
