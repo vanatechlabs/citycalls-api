@@ -11,6 +11,7 @@ import { env } from './config/env';
 import { upgradeRegistrationLifecycle } from './modules/registrations/registrationLifecycle.migration';
 import { renameMenuAccessKeys } from './modules/users/menuAccessRename.migration';
 import { mergeSofaCleaningIntoHomeCleaning } from './modules/websites/city-calls/navbar/sofaCleaningMerge.migration';
+import { backfillCustomerProfiles } from './modules/customer-profiles/customerProfile.backfill';
 
 async function main(): Promise<void> {
   await connectDb();
@@ -26,6 +27,10 @@ async function main(): Promise<void> {
   startEscalationCheckInterval();
   startHappyCallSchedulerInterval();
   startCampaignSchedulerInterval();
+
+  // Customer Section: one-time build of profiles from existing calls /
+  // enquiries — in the background, so start-up doesn't wait on it.
+  void backfillCustomerProfiles().catch((error) => console.error('[customer-profiles] backfill failed', error));
 
   httpServer.listen(env.port, () => {
     // ─── Startup Status ───────────────────────────────

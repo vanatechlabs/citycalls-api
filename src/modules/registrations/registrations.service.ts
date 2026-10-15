@@ -10,6 +10,7 @@ import {
   RegistrationSource, RegistrationStatus,
 } from './registration.model';
 import { nextRegistrationNo } from './registrationNumber';
+import { contactFromRegistration, syncCustomerSafely } from '../customer-profiles/customerProfile.sync';
 
 // Shared with other modules; re-exported so the controller keeps one import.
 export { resolveActor } from '../../lib/actor';
@@ -22,7 +23,7 @@ async function insertRegistration(data: Record<string, unknown>, source: Registr
   const now = new Date();
   for (let attempt = 0; ; attempt++) {
     try {
-      return await RegistrationModel.create({
+      const registration = await RegistrationModel.create({
         ...data,
         // CC2026100705 style, from Settings → Registration Number. A retry
         // takes the next number, so a clash with an older one just skips it.
@@ -35,6 +36,9 @@ async function insertRegistration(data: Record<string, unknown>, source: Registr
         // Website and admin entries alike stay unread (sidebar count + popup
         // for every admin) until someone opens them.
       });
+      // Customer Section: this mobile's profile (made on the first call).
+      await syncCustomerSafely({ ...contactFromRegistration(registration), isNew: true });
+      return registration;
     } catch (error) {
       if (!isDuplicateKeyError(error) || attempt >= 4) throw error;
     }
@@ -318,12 +322,16 @@ export async function getRegistration(id: string) {
   return registration;
 }
 
+const CONTACT_FIELDS = ['fullName', 'phone', 'email', 'altPhone', 'address', 'city', 'state', 'pincode'];
+
 export async function updateRegistration(id: string, data: Record<string, unknown>, actor: RegistrationActor) {
   const registration = await RegistrationModel.findByIdAndUpdate(id, { ...data, updatedBy: actor }, {
     new: true,
     runValidators: true,
   });
   if (!registration) throw new NotFoundError('Registration not found');
+  // Corrected name / mobile / address → the customer profile follows.
+  if (CONTACT_FIELDS.some((field) => field in data)) await syncCustomerSafely(contactFromRegistration(registration));
   return registration;
 }
 

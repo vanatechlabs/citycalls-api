@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { BLOG_STATUSES } from './blogs.model';
 
-const imagePathSchema = z.string().trim().max(2048).refine(
+export const imagePathSchema = z.string().trim().max(2048).refine(
   (value) => value === '' || value.startsWith('/uploads/') || value.startsWith('/assets/') || /^https?:\/\//i.test(value),
   'Image must be an uploaded path, a bundled asset path, or an http(s) URL'
 );
@@ -18,7 +18,7 @@ export const slugSchema = z
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'URL slug can only use lowercase letters, numbers and dashes (e.g. ac-service-tips)');
 
 // JSON-LD pasted with or without its <script> tag; stored as plain JSON.
-const schemaMarkupSchema = z
+export const schemaMarkupSchema = z
   .string()
   .max(20_000)
   .transform((value) => value.replace(/<script[^>]*>/gi, '').replace(/<\/script>/gi, '').trim())

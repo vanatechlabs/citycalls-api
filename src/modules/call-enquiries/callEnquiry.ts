@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { ActorSnapshot, actorSnapshotSchema } from '../../lib/actor';
 import { NotFoundError } from '../../lib/errors';
 import { EnquiryCounterModel } from '../enquiries/enquiry.model';
+import { contactFromCallEnquiry, syncCustomerSafely } from '../customer-profiles/customerProfile.sync';
 
 // Call Enquiry Section: someone phones only to ask about a service. Staff
 // note who called, for which service and where they heard of CityCalls; if
@@ -145,6 +146,7 @@ export async function getCallEnquiry(id: string) {
 
 export async function createCallEnquiry(data: CreateCallEnquiryInput, actor: ActorSnapshot) {
   const created = await CallEnquiryModel.create({ ...data, enquiryNo: await nextEnquiryNo(), createdBy: actor, updatedBy: actor });
+  await syncCustomerSafely({ ...contactFromCallEnquiry(created), isNew: true });
   return created.toObject();
 }
 
@@ -158,6 +160,7 @@ export async function updateCallEnquiry(id: string, data: UpdateCallEnquiryInput
     .select('-__v')
     .lean();
   if (!updated) throw new NotFoundError('Enquiry not found');
+  if (data.name !== undefined || data.phone !== undefined) await syncCustomerSafely(contactFromCallEnquiry(updated));
   return updated;
 }
 

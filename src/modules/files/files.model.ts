@@ -47,6 +47,8 @@ export const FILE_CATEGORIES = [
   'WEBSITE_SEO_OG_IMAGE',
   'WEBSITE_BLOG_IMAGE',
   'WEBSITE_BLOG_OG_IMAGE',
+  // Hero / share image of a city location page (Blog Section → Add Location Page).
+  'WEBSITE_LOCATION_PAGE_IMAGE',
   'WEBSITE_FAQ_IMAGE',
   // Photo on a home page "How It Works" step card.
   'WEBSITE_HOW_IT_WORKS_IMAGE',

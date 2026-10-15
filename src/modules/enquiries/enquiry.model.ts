@@ -67,6 +67,8 @@ const enquirySchema = new Schema<IEnquiry>(
 );
 
 enquirySchema.index({ type: 1, createdAt: -1 });
+// Customer profile: every enquiry from one mobile.
+enquirySchema.index({ phone: 1 });
 
 export const EnquiryModel = model<IEnquiry>('Enquiry', enquirySchema, 'enquiries');
 

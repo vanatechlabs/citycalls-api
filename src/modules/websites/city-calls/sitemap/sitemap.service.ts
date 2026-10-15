@@ -1,6 +1,7 @@
 import { PageBackgroundModel } from '../backgrounds/pageBackground.model';
 import { NavbarMenuModel } from '../navbar/navbarMenu.model';
 import { NavbarServiceModel } from '../navbar/navbarService.model';
+import { LocationPageModel } from '../location-pages/locationPage.model';
 import { ServicePageModel } from '../pages/servicePage.model';
 import { SeoMetaModel } from '../seo/seoMeta.model';
 import { STATIC_WEBSITE_PAGES } from '../seo/seoMeta.service';
@@ -10,17 +11,18 @@ export interface SitemapEntry {
   lastModified: Date;
 }
 
-// Every public page of the website: the fixed routes plus each active
-// service link under an active Navbar List menu. nextfrontend's
+// Every public page of the website: the fixed routes, each active service
+// link under an active Navbar List menu, and each published location page. nextfrontend's
 // app/sitemap.ts turns this into /sitemap.xml, so a navlink added (or
 // switched off) in admin shows up there without a redeploy.
 export async function getSitemapEntries(): Promise<SitemapEntry[]> {
-  const [menus, services, servicePages, seoMetas, backgrounds] = await Promise.all([
+  const [menus, services, servicePages, seoMetas, backgrounds, locationPages] = await Promise.all([
     NavbarMenuModel.find({ status: 'ACTIVE' }).sort({ sortOrder: 1, createdAt: 1 }).select('_id').lean(),
     NavbarServiceModel.find({ status: 'ACTIVE' }).sort({ sortOrder: 1, createdAt: 1 }).select('path menuId updatedAt').lean(),
     ServicePageModel.find({ status: 'ACTIVE' }).select('navServiceId updatedAt').lean(),
     SeoMetaModel.find({ status: 'ACTIVE' }).select('pagePath updatedAt').lean(),
     PageBackgroundModel.find({ status: 'ACTIVE' }).select('pagePath updatedAt').lean(),
+    LocationPageModel.find({ status: 'PUBLISHED' }).sort({ createdAt: 1 }).select('slug updatedAt').lean(),
   ]);
 
   // A page counts as changed when its link, content, SEO or background was.
@@ -45,9 +47,11 @@ export async function getSitemapEntries(): Promise<SitemapEntry[]> {
     if (contentUpdatedAt) touch(service.path, contentUpdatedAt);
   }
 
+  for (const page of locationPages) touch(`/${page.slug}`, page.updatedAt);
+
   // Fixed routes with no admin edits yet still need a date.
   const fallbackDate = new Date('2026-01-01T00:00:00.000Z');
-  const paths = [...STATIC_WEBSITE_PAGES.map((p) => p.path), ...liveServices.map((s) => s.path)];
+  const paths = [...STATIC_WEBSITE_PAGES.map((p) => p.path), ...liveServices.map((s) => s.path), ...locationPages.map((p) => `/${p.slug}`)];
   return [...new Set(paths.map((p) => p.toLowerCase()))].map((path) => ({
     path,
     lastModified: changedAt.get(path) ?? fallbackDate,

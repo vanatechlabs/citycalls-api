@@ -5,6 +5,7 @@ import { isWhatsAppEnabled, sendWhatsApp } from '../../lib/whatsappAdapter';
 import { env } from '../../config/env';
 import { EnquiryCounterModel, EnquiryModel, EnquiryStatus, EnquiryType } from './enquiry.model';
 import { publicContactEnquirySchema, publicQuickBookingSchema } from './enquiries.validation';
+import { contactFromWebsiteEnquiry, syncCustomerSafely } from '../customer-profiles/customerProfile.sync';
 
 const PREFIX: Record<EnquiryType, string> = { QUICK_BOOKING: 'QB', CONTACT: 'CE' };
 
@@ -29,6 +30,7 @@ export async function createQuickBooking(data: z.infer<typeof publicQuickBooking
     message: data.message,
     page: data.page,
   });
+  await syncCustomerSafely({ ...contactFromWebsiteEnquiry(enquiry), isNew: true });
   // Runs in the background — the visitor's booking never waits on WhatsApp.
   void sendEnquiryWhatsApp(enquiry._id.toString(), {
     campaignName: env.aisensy.quickBookingCampaign,
@@ -95,6 +97,7 @@ export async function createContactEnquiry(data: z.infer<typeof publicContactEnq
     referenceNo: await nextReference('CONTACT'),
     ...data,
   });
+  await syncCustomerSafely({ ...contactFromWebsiteEnquiry(enquiry), isNew: true });
   void sendEnquiryWhatsApp(enquiry._id.toString(), {
     campaignName: env.aisensy.contactEnquiryCampaign,
     mediaUrl: env.aisensy.contactEnquiryMediaUrl,
