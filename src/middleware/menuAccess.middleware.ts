@@ -27,6 +27,7 @@ const API_MENUS: { prefix: string; keys: string[] }[] = [
   { prefix: '/websites/city-calls/about-page/journey', keys: ['Website Section::Our Journey'] },
   { prefix: '/websites/city-calls/home-page/launch-spotlight', keys: ['Pages Section::Launch Spotlight'] },
   { prefix: '/websites/city-calls/home-page/testimonials', keys: ['Pages Section::Testimonials'] },
+  { prefix: '/websites/city-calls/all-services', keys: ['Pages Section::All Services'] },
   { prefix: '/websites/city-calls/pages', keys: ['Pages Section::Add Page', 'Pages Section::Page List'] },
   { prefix: '/websites/city-calls/backgrounds', keys: ['Background Section::*'] },
   { prefix: '/websites/city-calls/parallax', keys: ['Background Section::*'] },

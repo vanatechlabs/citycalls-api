@@ -52,6 +52,7 @@ import callEnquiryRoutes from './modules/call-enquiries/callEnquiry.routes';
 import cityCallsHomeTestimonialsRoutes from './modules/websites/city-calls/home-page/testimonials/testimonials.routes';
 import cityCallsBlogsRoutes from './modules/websites/city-calls/blogs/blogs.routes';
 import cityCallsLocationPagesRoutes from './modules/websites/city-calls/location-pages/locationPage.routes';
+import cityCallsAllServicesRoutes from './modules/websites/city-calls/all-services/allServices.routes';
 import cityCallsHomeFaqRoutes from './modules/websites/city-calls/home-page/faq/faq.routes';
 import cityCallsHomeKeyFeaturesRoutes from './modules/websites/city-calls/home-page/key-features/keyFeatures.routes';
 import cityCallsHomeHowItWorksRoutes from './modules/websites/city-calls/home-page/how-it-works/howItWorks.routes';
@@ -140,6 +141,7 @@ export function createApp(): Application {
   app.use('/api/v1', cityCallsHomeTestimonialsRoutes);
   app.use('/api/v1', cityCallsBlogsRoutes);
   app.use('/api/v1', cityCallsLocationPagesRoutes);
+  app.use('/api/v1', cityCallsAllServicesRoutes);
   app.use('/api/v1', cityCallsHomeFaqRoutes);
   app.use('/api/v1', cityCallsHomeKeyFeaturesRoutes);
   app.use('/api/v1', cityCallsHomeHowItWorksRoutes);
