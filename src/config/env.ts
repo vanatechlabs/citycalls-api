@@ -64,6 +64,11 @@ export const env = {
     serviceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH,
     serviceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON,
   },
+  // Help Now online payments. Online checkout is off until both are set.
+  razorpay: {
+    keyId: process.env.RAZORPAY_KEY_ID,
+    keySecret: process.env.RAZORPAY_KEY_SECRET,
+  },
 } as const;
 
 // What cors()/socket.io actually allow. Outside production, any localhost port

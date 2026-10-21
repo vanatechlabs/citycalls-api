@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TESTIMONIAL_STATUSES } from './testimonials.model';
+import { TESTIMONIAL_STATUSES, TESTIMONIAL_WEBSITES } from './testimonials.model';
 
 const optionalText = (max: number) => z.string().trim().max(max).default('');
 const hexColor = z.string().trim().regex(/^#[0-9a-fA-F]{6}$/, 'Colour must be a hex value like #3e8914');
@@ -13,6 +13,7 @@ const testimonialFields = {
   color: hexColor.default('#3e8914'),
   sortOrder: z.coerce.number().int().min(0).default(0),
   status: z.enum(TESTIMONIAL_STATUSES).default('PUBLISHED'),
+  website: z.enum(TESTIMONIAL_WEBSITES).default('CITY_CALLS'),
 };
 
 export const createTestimonialSchema = z.object(testimonialFields).strict();
@@ -27,6 +28,7 @@ export const updateTestimonialSchema = z.object({
   color: hexColor.optional(),
   sortOrder: z.coerce.number().int().min(0).optional(),
   status: z.enum(TESTIMONIAL_STATUSES).optional(),
+  website: z.enum(TESTIMONIAL_WEBSITES).optional(),
 }).strict().refine((value) => Object.keys(value).length > 0, { message: 'At least one field must be supplied' });
 
 export const updateTestimonialsSectionSchema = z.object({

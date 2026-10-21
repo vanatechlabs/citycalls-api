@@ -70,6 +70,23 @@ export async function createWebsiteRegistration(
     'WEBSITE',
     WEBSITE_ACTOR
   );
+  return confirmWebsiteBooking(registration);
+}
+
+export const HELP_NOW_SERVICE_CATEGORY = 'Help Now';
+
+// Help Now (helpnow.citycalls.in) bookings. Its services aren't Navbar List
+// links, so the name comes from the booking and the category is Help Now.
+export async function createHelpNowRegistration(data: Record<string, unknown> & { serviceName: string }) {
+  const registration = await insertRegistration(
+    { ...data, serviceCategory: HELP_NOW_SERVICE_CATEGORY },
+    'WEBSITE',
+    WEBSITE_ACTOR
+  );
+  return confirmWebsiteBooking(registration);
+}
+
+function confirmWebsiteBooking(registration: Awaited<ReturnType<typeof insertRegistration>>) {
   // Runs in the background — the booking never waits on WhatsApp.
   void sendBookingWhatsApp(registration._id.toString(), {
     phone: registration.phone,
