@@ -10,8 +10,11 @@ type SectionDoc = { _id: unknown; content: Record<string, unknown>; updatedBy?: 
 const toAdmin = (doc: SectionDoc) => ({ _id: doc._id, ...doc.content, updatedBy: doc.updatedBy, updatedAt: doc.updatedAt });
 
 // Created with the website's current content on first open, so the admin
-// form is never empty.
+// form is never empty. Reading must not touch the document: an upsert bumps
+// updatedAt, and the admin form resets (losing unsaved edits) when it changes.
 export async function getHelpNowHomeSection(section: HelpNowHomeSection) {
+  const existing = await HelpNowHomeSectionModel.findOne({ key: section }).lean();
+  if (existing) return toAdmin(existing as SectionDoc);
   const doc = await HelpNowHomeSectionModel.findOneAndUpdate(
     { key: section },
     { $setOnInsert: { key: section, content: helpNowHomeDefault(section) } },
