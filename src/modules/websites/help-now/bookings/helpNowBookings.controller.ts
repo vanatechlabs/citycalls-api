@@ -4,6 +4,15 @@ import { ScopedRequest } from '../../../../middleware/permission.middleware';
 import * as helpNowBookingsService from './helpNowBookings.service';
 import { requestHelpNowOtp, verifyHelpNowOtp } from './helpNowOtp';
 import { publicHelpNowCoupons } from './helpNowPricing';
+import { getHelpNowRates } from './helpNowRates';
+
+export async function listHelpNowRatesHandler(_req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    sendSuccess(res, await getHelpNowRates(), 'Rates fetched successfully');
+  } catch (error) {
+    next(error);
+  }
+}
 
 export async function listHelpNowCouponsHandler(_req: ScopedRequest, res: Response, next: NextFunction) {
   try {
@@ -15,7 +24,7 @@ export async function listHelpNowCouponsHandler(_req: ScopedRequest, res: Respon
 
 export async function quoteHelpNowBookingHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
-    const quote = helpNowBookingsService.getHelpNowQuote(req.body);
+    const quote = await helpNowBookingsService.getHelpNowQuote(req.body);
     sendSuccess(res, quote, 'Price calculated successfully');
   } catch (error) {
     next(error);

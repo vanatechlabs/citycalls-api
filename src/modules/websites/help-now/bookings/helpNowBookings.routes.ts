@@ -15,6 +15,7 @@ const router = Router();
 const basePath = '/public/websites/help-now/bookings';
 
 router.get(`${basePath}/coupons`, publicApiRateLimit, controller.listHelpNowCouponsHandler);
+router.get(`${basePath}/rates`, publicApiRateLimit, controller.listHelpNowRatesHandler);
 router.post(`${basePath}/quote`, publicApiRateLimit, validate(helpNowQuoteSchema), controller.quoteHelpNowBookingHandler);
 router.post(basePath, publicBookingRateLimit, validate(createHelpNowBookingSchema), controller.createHelpNowBookingHandler);
 router.post(

@@ -2,6 +2,7 @@ import { ActorSnapshot } from '../../../../lib/actor';
 import { ConflictError, NotFoundError } from '../../../../lib/errors';
 import { NavbarMenuModel } from '../navbar/navbarMenu.model';
 import { NavbarServiceModel } from '../navbar/navbarService.model';
+import { HELP_NOW_SEO_PAGES, isHelpNowSeoKey } from '../../help-now/seo/helpNowSeo.pages';
 import { SeoMetaModel, SeoMetaStatus } from './seoMeta.model';
 
 // nextfrontend's fixed routes (src/app/(site)/*). Service pages come from
@@ -48,6 +49,8 @@ export async function listSeoPageOptions(): Promise<SeoPageGroup[]> {
       .map((s) => withMeta({ path: s.path, name: s.name, inactive: menu.status !== 'ACTIVE' || s.status !== 'ACTIVE' }));
     if (pages.length > 0) groups.push({ group: menu.name, pages });
   }
+  // helpnow.citycalls.in's pages, kept apart by their path prefix.
+  groups.push({ group: 'Help Now Website', pages: HELP_NOW_SEO_PAGES.map(withMeta) });
   return groups;
 }
 
@@ -57,6 +60,7 @@ async function pageNameLookup() {
   const names = new Map<string, string>([
     ...STATIC_WEBSITE_PAGES.map((p) => [p.path, p.name] as [string, string]),
     ...services.map((s) => [s.path.toLowerCase(), s.name] as [string, string]),
+    ...HELP_NOW_SEO_PAGES.map((p) => [p.path, p.name] as [string, string]),
   ]);
   return (path: string) => names.get(path) ?? path;
 }
@@ -89,6 +93,8 @@ export async function getSeoMeta(id: string) {
 }
 
 export async function getPublicSeoMeta(path: string) {
+  // Help Now's entries are only served to Help Now (help-now/seo).
+  if (isHelpNowSeoKey(path.toLowerCase())) return null;
   return SeoMetaModel.findOne({ pagePath: path.toLowerCase(), status: 'ACTIVE' })
     .select('-createdBy -updatedBy -status -__v')
     .lean();

@@ -202,6 +202,49 @@ export const HELP_NOW_HOME_DEFAULTS: HelpNowHomeContent = {
     ],
     status: 'ACTIVE',
   },
+  popular: {
+    eyebrow: 'Our Popular Services',
+    heading: 'Choose Your Cleaning Service — one tap away.',
+    highlight: '— one tap away.',
+    description: 'Verified helpers, transparent pricing, and flexible booking for every home cleaning need.',
+    cards: [
+      { slug: 'house-cleaning', ratePerHour: 179, description: 'Floors, furniture, fans and bedrooms kept neat and dust-free.', image: '/assets/Images/h5.png', alt: 'Help Now helper doing house cleaning in a living room', badge: '', active: true },
+      { slug: 'dish-washing', ratePerHour: 159, description: 'Utensils washed, sink scrubbed, stove wiped and kitchen waste cleared.', image: '/assets/Images/h1.png', alt: 'Help Now helper washing dishes in a home kitchen', badge: 'Most Booked', active: true },
+      { slug: 'kitchen-assistance', ratePerHour: 199, description: 'Vegetables chopped, dough kneaded and ingredients prepped for cooking.', image: '/assets/Images/h2.png', alt: 'Help Now helper assisting with kitchen prep', badge: '', active: true },
+      { slug: 'bathroom-cleaning', ratePerHour: 189, description: 'Mirrors, WC, washbasin, fittings and floor cleaned and dried.', image: '/assets/Images/ab2.png', alt: 'Help Now helper cleaning a bathroom washbasin', badge: '', active: true },
+      { slug: 'laundry-ironing', ratePerHour: 169, description: 'Clothes sorted, machine-washed, dried, ironed and arranged in cupboards.', image: '/assets/Images/h4.png', alt: 'Help Now helper ironing and folding clothes', badge: '', active: true },
+      { slug: 'dusting-wiping', ratePerHour: 149, description: 'Shelves, tables, window sills, grills and cobwebs dusted and wiped.', image: '/assets/Images/h3.png', alt: 'Help Now helper dusting a ceiling fan', badge: '', active: true },
+      { slug: 'everyday-home-help', ratePerHour: 169, description: 'Fans, fridge, wardrobes, kitchen slab, windows and more — mix and match.', image: '/assets/Images/ab3.png', alt: 'Help Now helper tidying a living room', badge: '', active: true },
+    ],
+    status: 'ACTIVE',
+  },
+  steps: {
+    eyebrow: 'Your Guide',
+    heading: 'Simple Steps to Book House Help',
+    highlight: 'House Help',
+    items: [
+      { icon: 'Home', title: 'Choose Service', description: 'Select the service you need from our wide range of cleaning options.' },
+      { icon: 'CalendarDays', title: 'Select Date & Time', description: 'Pick your preferred date and convenient time slot for the service.' },
+      { icon: 'MapPin', title: 'Add Details', description: 'Enter your address and any additional details about your home.' },
+      { icon: 'CreditCard', title: 'Make Payment', description: 'Pay securely online via UPI, card, or net banking — or after the service.' },
+      { icon: 'CheckCircle2', title: 'Helper Arrives', description: 'Your verified helper arrives on time and ready to work. Guaranteed satisfaction.' },
+    ],
+    status: 'ACTIVE',
+  },
+  pricing: {
+    eyebrow: 'Fair Pricing',
+    heading: 'Know your price before you book',
+    highlight: 'before you book',
+    description: 'Pick a service, helpers and hours — no hidden costs.',
+    perks: [
+      { icon: 'BadgeCheck', title: 'Verified helpers', text: 'Background-checked & trained' },
+      { icon: 'Wallet', title: 'Pay your way', text: 'Online or after the service' },
+      { icon: 'BadgePercent', title: 'Coupons', text: 'Apply at checkout' },
+      { icon: 'CalendarClock', title: 'Easy reschedule', text: 'On call or WhatsApp' },
+    ],
+    note: 'Rates are per helper, per hour. Need more than 8 hours? Set it in the booking form — up to 16 hours.',
+    status: 'ACTIVE',
+  },
 };
 
 // A fresh copy, so callers can never mutate the defaults.

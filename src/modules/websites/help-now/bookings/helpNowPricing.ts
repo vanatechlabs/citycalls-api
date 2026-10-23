@@ -1,9 +1,9 @@
 import { ValidationError } from '../../../../lib/errors';
 
 // Help Now service pages (helpnow.citycalls.in/services/<slug>) and their
-// hourly rate per helper, in rupees. This is the price that is charged — the
-// website shows the same rates (nexthelpnow src/data/helpNowServices.ts), so
-// change both together.
+// default hourly rate per helper, in rupees. Admin → Help Now → Popular
+// Services can set each rate (helpNowRates.ts); bookings are priced with that,
+// and the website reads the same rates from /bookings/rates.
 export const HELP_NOW_SERVICES = {
   'house-cleaning': { name: 'House Cleaning', ratePerHour: 179 },
   'dish-washing': { name: 'Dish Washing', ratePerHour: 159 },
@@ -18,6 +18,9 @@ export type HelpNowServiceSlug = keyof typeof HELP_NOW_SERVICES;
 export const HELP_NOW_SERVICE_SLUGS = Object.keys(HELP_NOW_SERVICES) as [HelpNowServiceSlug, ...HelpNowServiceSlug[]];
 
 export const HELP_NOW_LIMITS = { minHours: 1, maxHours: 16, minHelpers: 1, maxHelpers: 4 } as const;
+// Bounds for an admin-set hourly rate, in rupees.
+export const HELP_NOW_RATE_LIMITS = { min: 49, max: 5000 } as const;
+export type HelpNowRates = Record<HelpNowServiceSlug, number>;
 
 // Optional buffer for heavy grease / dirt, charged once per booking (rupees).
 export const HELP_NOW_EXTRA_TIME = {
@@ -84,7 +87,7 @@ export function quoteHelpNowBooking(input: {
   helpers: number;
   extraTime?: HelpNowExtraTime;
   couponCode?: string;
-}): HelpNowQuote {
+}, rates?: Partial<HelpNowRates>): HelpNowQuote {
   const service = HELP_NOW_SERVICES[input.serviceSlug];
   if (!service) {
     throw new ValidationError([{ field: 'serviceSlug', code: 'INVALID', message: 'Unknown Help Now service' }]);
@@ -92,7 +95,9 @@ export function quoteHelpNowBooking(input: {
 
   const extraTime = input.extraTime ?? 'NONE';
   const extraTimeCharge = HELP_NOW_EXTRA_TIME[extraTime].charge;
-  const subtotal = service.ratePerHour * input.hours * input.helpers + extraTimeCharge;
+  // The admin's rate when one is set, else the default.
+  const ratePerHour = rates?.[input.serviceSlug] ?? service.ratePerHour;
+  const subtotal = ratePerHour * input.hours * input.helpers + extraTimeCharge;
   const code = input.couponCode?.trim().toUpperCase();
   let discount = 0;
   let coupon: HelpNowQuote['coupon'] = null;
@@ -123,7 +128,7 @@ export function quoteHelpNowBooking(input: {
   return {
     serviceSlug: input.serviceSlug,
     serviceName: service.name,
-    ratePerHour: service.ratePerHour,
+    ratePerHour,
     hours: input.hours,
     helpers: input.helpers,
     extraTime,

@@ -64,6 +64,10 @@ describe('Help Now pricing', () => {
 
   it('limits a service coupon to its service', () => {
     expect(quoteHelpNowBooking({ serviceSlug: 'dish-washing', hours: 2, helpers: 1, couponCode: 'DISH15' }).discount).toBe(48);
+    // An admin-set rate (Popular Services) is what gets charged.
+    const custom = quoteHelpNowBooking({ serviceSlug: 'dish-washing', hours: 2, helpers: 1 }, { 'dish-washing': 199 });
+    expect(custom.ratePerHour).toBe(199);
+    expect(custom.total).toBe(398);
     expect(() => quoteHelpNowBooking({ serviceSlug: 'house-cleaning', hours: 2, helpers: 1, couponCode: 'DISH15' })).toThrow('Validation failed');
   });
 

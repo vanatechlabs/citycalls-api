@@ -66,6 +66,8 @@ import registrationsRoutes from './modules/registrations/registrations.routes';
 import helpNowBookingsRoutes from './modules/websites/help-now/bookings/helpNowBookings.routes';
 import helpNowHomeRoutes from './modules/websites/help-now/home-page/helpNowHome.routes';
 import helpNowQuickBookingRoutes from './modules/websites/help-now/quick-bookings/helpNowQuickBooking.routes';
+import helpNowServiceHeroRoutes from './modules/websites/help-now/service-heroes/helpNowServiceHero.routes';
+import helpNowSeoRoutes from './modules/websites/help-now/seo/helpNowSeo.routes';
 import cityCallsSeoRoutes from './modules/websites/city-calls/seo/seoMeta.routes';
 import cityCallsBackgroundRoutes from './modules/websites/city-calls/backgrounds/pageBackground.routes';
 import cityCallsParallaxRoutes from './modules/websites/city-calls/parallax/pageParallax.routes';
@@ -158,6 +160,8 @@ export function createApp(): Application {
   app.use('/api/v1', helpNowBookingsRoutes);
   app.use('/api/v1', helpNowHomeRoutes);
   app.use('/api/v1', helpNowQuickBookingRoutes);
+  app.use('/api/v1', helpNowServiceHeroRoutes);
+  app.use('/api/v1', helpNowSeoRoutes);
   app.use('/api/v1', cityCallsSeoRoutes);
   app.use('/api/v1', cityCallsBackgroundRoutes);
   app.use('/api/v1', cityCallsParallaxRoutes);

@@ -57,6 +57,9 @@ export async function getPublicHelpNowHome() {
     about: visible(content.about),
     services: visible(content.services),
     faq: content.faq.status === 'ACTIVE' ? { ...content.faq, items: content.faq.items.filter((item) => item.active) } : null,
+    popular: content.popular.status === 'ACTIVE' ? { ...content.popular, cards: content.popular.cards.filter((card) => card.active) } : null,
+    steps: visible(content.steps),
+    pricing: visible(content.pricing),
     testimonials,
   };
 }

@@ -4,10 +4,11 @@ import { createHelpNowRegistration } from '../../../registrations/registrations.
 import { isPhoneVerified } from './helpNowOtp';
 import { HelpNowPaymentModel } from './helpNowPayment.model';
 import { HELP_NOW_EXTRA_TIME, HelpNowQuote, quoteHelpNowBooking } from './helpNowPricing';
+import { getHelpNowRates } from './helpNowRates';
 import { CreateHelpNowBookingInput } from './helpNowBookings.validation';
 
-export function getHelpNowQuote(input: Parameters<typeof quoteHelpNowBooking>[0]) {
-  return quoteHelpNowBooking(input);
+export async function getHelpNowQuote(input: Parameters<typeof quoteHelpNowBooking>[0]) {
+  return quoteHelpNowBooking(input, await getHelpNowRates());
 }
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
@@ -61,7 +62,7 @@ export async function createHelpNowBooking(input: CreateHelpNowBookingInput) {
   }
 
   // Priced again here — the website's numbers are only ever a preview.
-  const quote = quoteHelpNowBooking(booking);
+  const quote = quoteHelpNowBooking(booking, await getHelpNowRates());
 
   if (booking.paymentMode === 'AFTER_SERVICE') {
     const registration = await createHelpNowRegistration(toRegistration(booking, quote));
