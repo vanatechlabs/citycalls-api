@@ -22,6 +22,9 @@ import serviceRequestsRoutes from './modules/service-requests/serviceRequests.ro
 import filesRoutes from './modules/files/files.routes';
 import serviceVisitsRoutes from './modules/field-execution/serviceVisits.routes';
 import financeRoutes from './modules/finance/finance.routes';
+import documentRoutes from './modules/finance/document.routes';
+import estimateRecoveryRoutes from './modules/finance/estimateRecovery.routes';
+import gatewayRoutes, { gatewayWebhook } from './modules/finance/gatewayPayments.routes';
 import vendorFinanceRoutes from './modules/vendors/vendorFinance.routes';
 import happyCallsRoutes from './modules/follow-up/happyCalls.routes';
 import notificationsRoutes from './modules/notifications/notifications.routes';
@@ -87,6 +90,7 @@ export function createApp(): Application {
       credentials: true,
     })
   );
+  app.use('/api/v1/app-payments/webhook', express.raw({ type: 'application/json', limit: '256kb' }), gatewayWebhook);
   app.use(express.json({ limit: '2mb' }));
   app.use(cookieParser());
   app.use(requestIdMiddleware);
@@ -116,6 +120,9 @@ export function createApp(): Application {
   app.use('/api/v1', filesRoutes);
   app.use('/api/v1', serviceVisitsRoutes);
   app.use('/api/v1', financeRoutes);
+  app.use('/api/v1', documentRoutes);
+  app.use('/api/v1', estimateRecoveryRoutes);
+  app.use('/api/v1', gatewayRoutes);
   app.use('/api/v1', vendorFinanceRoutes);
   app.use('/api/v1', happyCallsRoutes);
   app.use('/api/v1', notificationsRoutes);

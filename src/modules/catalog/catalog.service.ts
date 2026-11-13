@@ -1,3 +1,4 @@
+import { effectivePricing, quoteService } from './servicePricing';
 import { ServiceModel } from './catalog.model';
 import { BranchModel } from '../organization/organization.model';
 import { MasterModel } from '../config/master.model';
@@ -51,13 +52,14 @@ export async function listServices(params: ListParams) {
     ServiceModel.find(filter).skip(skip).limit(params.limit).sort({ name: 1 }),
     ServiceModel.countDocuments(filter),
   ]);
-  return { items, meta: buildPaginationMeta(params.page, params.limit, total) };
+  const shaped = await Promise.all(items.map(async service => ({ ...service.toObject(), pricing: await effectivePricing(service) })));
+  return { items: shaped, meta: buildPaginationMeta(params.page, params.limit, total) };
 }
 
 export async function getService(id: string) {
   const service = await ServiceModel.findById(id);
   if (!service) throw new NotFoundError('Service not found');
-  return service;
+  return { ...service.toObject(), pricing: await effectivePricing(service) };
 }
 export async function getServiceDiagnostics(id: string) {
   const service = await ServiceModel.findById(id)
@@ -77,13 +79,17 @@ export async function getServiceDiagnostics(id: string) {
 }
 
 export async function createService(data: Record<string, unknown>) {
-  return ServiceModel.create(data);
+  const service = new ServiceModel(data);
+  if (service.active) await quoteService(service);
+  return service.save();
 }
 
 export async function updateService(id: string, data: Record<string, unknown>) {
-  const service = await ServiceModel.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+  const service = await ServiceModel.findById(id);
   if (!service) throw new NotFoundError('Service not found');
-  return service;
+  service.set(data);
+  if (service.active) await quoteService(service);
+  return service.save();
 }
 
 export async function bulkChangeCategory(ids: string[], categoryId: string) {

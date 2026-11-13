@@ -4,6 +4,8 @@ import { Schema, model, Document, Types } from 'mongoose';
 // docs/04-modules-and-feature-list.md M6. Brands/ProductTypes ride on the generic
 // Masters engine (masterType: 'BRAND' | 'PRODUCT_TYPE'), not their own collections.
 interface IPricing {
+  mode?: 'FIXED' | 'HOURLY' | 'ESTIMATE';
+  hourlyRate?: number;
   basePrice: number;
   visitingCharge: number;
   inspectionCharge: number;
@@ -59,6 +61,8 @@ const serviceSchema = new Schema<IService>(
     requiredSkills: { type: [String], default: [] },
     expectedDurationMinutes: { type: Number, default: 60 },
     pricing: {
+      mode: { type: String, enum: ['FIXED', 'HOURLY', 'ESTIMATE'] },
+      hourlyRate: { type: Number, min: 0 },
       basePrice: { type: Number, default: 0 },
       visitingCharge: { type: Number, default: 0 },
       inspectionCharge: { type: Number, default: 0 },

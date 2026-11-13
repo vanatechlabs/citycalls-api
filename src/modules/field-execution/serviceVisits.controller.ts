@@ -7,6 +7,7 @@ import { UnauthorizedError } from '../../lib/errors';
 
 export async function listVisitsHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
+    await assertCanActOnServiceRequest(req, paramAsString(req.params.id));
     const visits = await visitService.getVisitsForServiceRequest(paramAsString(req.params.id));
     sendSuccess(res, visits, 'Service visits fetched successfully');
   } catch (err) {

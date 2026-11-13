@@ -7,11 +7,14 @@ const addressSnapshotSchema = z.object({
   landmark: z.string().optional(),
   city: z.string().min(1),
   state: z.string().min(1),
-  pinCode: z.string().min(4),
+  pinCode: z.string().regex(/^\d{6}$/),
   country: z.string().default('India'),
 });
 
 export const createServiceRequestSchema = z.object({
+  hours: z.number().int().min(1).max(16).optional(),
+  helpers: z.number().int().min(1).max(4).optional(),
+  expectedTotal: z.number().nonnegative().optional(),
   customerId: z.string(),
   customerProductId: z.string().optional(),
   addressSnapshot: addressSnapshotSchema,

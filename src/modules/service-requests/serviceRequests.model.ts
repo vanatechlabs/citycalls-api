@@ -1,3 +1,4 @@
+import { BookingPrice } from '../catalog/servicePricing';
 import { Schema, model, Document, Types } from 'mongoose';
 
 export const ASSIGNEE_TYPES = ['BRANCH', 'SUB_BRANCH', 'TEAM', 'EMPLOYEE', 'VENDOR', 'OUTSOURCED_PARTNER'] as const;
@@ -56,6 +57,9 @@ interface IAddressSnapshot {
 
 // docs/09-database-architecture.md §2 "service_requests".
 export interface IServiceRequest extends Document {
+  bookingPrice?: BookingPrice;
+  completionVerifiedAt?: Date;
+  executionVersion?: number;
   number: string;
   customerId: Types.ObjectId;
   customerProductId?: Types.ObjectId;
@@ -65,6 +69,7 @@ export interface IServiceRequest extends Document {
   subBranchId?: Types.ObjectId;
   assigneeType?: AssigneeType;
   assigneeId?: Types.ObjectId;
+  vendorTechnicianUserId?: Types.ObjectId;
   status: ServiceRequestStatus;
   isEscalated: boolean;
   escalationReason?: string;
@@ -91,6 +96,9 @@ export interface IServiceRequest extends Document {
 
 const serviceRequestSchema = new Schema<IServiceRequest>(
   {
+    bookingPrice: { type: Schema.Types.Mixed },
+    executionVersion: { type: Number, default: 0 },
+    completionVerifiedAt: { type: Date },
     number: { type: String, required: true, unique: true },
     customerId: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
     customerProductId: { type: Schema.Types.ObjectId, ref: 'CustomerProduct' },
@@ -107,6 +115,7 @@ const serviceRequestSchema = new Schema<IServiceRequest>(
     branchId: { type: Schema.Types.ObjectId, ref: 'Branch' },
     subBranchId: { type: Schema.Types.ObjectId, ref: 'SubBranch' },
     assigneeType: { type: String, enum: ASSIGNEE_TYPES },
+    vendorTechnicianUserId: { type: Schema.Types.ObjectId, ref: 'User' },
     assigneeId: { type: Schema.Types.ObjectId },
     status: { type: String, enum: SERVICE_REQUEST_STATUSES, default: 'NEW' },
     isEscalated: { type: Boolean, default: false },

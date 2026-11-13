@@ -60,7 +60,7 @@ describe('Admin utility endpoints — brands, roles, reopen-requests, audit logs
 
     const roles = await listRoles();
     const callExecutive = roles.find((r) => r.id === 'CALL_EXECUTIVE');
-    expect(callExecutive?.permissions).toEqual(expect.arrayContaining(['calls.view', 'calls.create']));
+    expect(callExecutive?.permissions).toEqual(expect.arrayContaining([expect.objectContaining({ module: 'calls', action: 'view', dataScope: 'BRANCH' }), expect.objectContaining({ module: 'calls', action: 'create', dataScope: 'BRANCH' })]));
     expect(callExecutive?.name).toBe('Call Executive');
 
     // Every real role from the enum must be present, not a hardcoded subset of 3.

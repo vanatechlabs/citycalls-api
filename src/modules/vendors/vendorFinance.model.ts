@@ -39,6 +39,7 @@ const vendorInvoiceSchema = new Schema<IVendorInvoice>(
 );
 
 vendorInvoiceSchema.index({ vendorId: 1, status: 1 });
+vendorInvoiceSchema.index({ serviceRequestIds: 1 }, { unique: true, partialFilterExpression: { 'serviceRequestIds.0': { $exists: true } } });
 
 export const VendorInvoiceModel = model<IVendorInvoice>('VendorInvoice', vendorInvoiceSchema);
 
@@ -71,5 +72,6 @@ const vendorPayoutSchema = new Schema<IVendorPayout>(
 );
 
 vendorPayoutSchema.index({ vendorId: 1, status: 1 });
+vendorPayoutSchema.index({ vendorInvoiceIds: 1 }, { unique: true });
 
 export const VendorPayoutModel = model<IVendorPayout>('VendorPayout', vendorPayoutSchema);

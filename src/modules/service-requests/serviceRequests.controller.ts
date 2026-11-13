@@ -1,3 +1,4 @@
+import { isCustomerRole } from '../../lib/ownCustomerScope';
 import { Response, NextFunction } from 'express';
 import * as srService from './serviceRequests.service';
 import * as happyCallsService from '../follow-up/happyCalls.service';
@@ -51,7 +52,7 @@ export async function createServiceRequestHandler(req: ScopedRequest, res: Respo
   try {
     if (!req.user) throw new UnauthorizedError();
     const body = { ...req.body };
-    if (!req.scope) {
+    if (!req.scope || isCustomerRole(req.user.role)) {
       if (body.source !== 'CUSTOMER_APP') {
         throw new ForbiddenError(`Role ${req.user.role} lacks permission for serviceRequests.create`);
       }

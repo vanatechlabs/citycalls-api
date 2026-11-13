@@ -19,6 +19,7 @@ export const addPartsSchema = z.object({
 });
 
 export const updateWorkSchema = z.object({
+  checklist: z.array(z.string().min(1)).max(100).optional(),
   labourCharge: z.number().nonnegative().optional(),
   workNotes: z.string().optional(),
   beforeImages: z.array(z.string()).optional(),

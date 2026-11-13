@@ -28,7 +28,8 @@ export const createVendorSchema = z.object({
     .optional(),
   agreement: z.object({ url: z.string(), expiryDate: z.coerce.date() }).optional(),
   commissionModel: z.enum(['FIXED', 'SERVICE_WISE']).default('FIXED'),
-  commissionRate: z.number().optional(),
+  commissionRate: z.number().min(0).max(100).optional(),
+  serviceCommissionRates: z.array(z.object({ serviceId: z.string().regex(/^[a-f0-9]{24}$/i), rate: z.number().min(0).max(100) })).optional(),
   active: z.boolean().optional(),
 });
 
@@ -51,7 +52,8 @@ export const updateVendorSchema = z.object({
     .optional(),
   agreement: z.object({ url: z.string(), expiryDate: z.coerce.date() }).optional(),
   commissionModel: z.enum(['FIXED', 'SERVICE_WISE']).optional(),
-  commissionRate: z.number().optional(),
+  commissionRate: z.number().min(0).max(100).optional(),
+  serviceCommissionRates: z.array(z.object({ serviceId: z.string().regex(/^[a-f0-9]{24}$/i), rate: z.number().min(0).max(100) })).optional(),
   active: z.boolean().optional(),
 });
 

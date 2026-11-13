@@ -5,6 +5,7 @@ export const ESTIMATE_STATUSES = ['DRAFT', 'SHARED', 'APPROVED', 'REJECTED', 'EX
 export type EstimateStatus = (typeof ESTIMATE_STATUSES)[number];
 
 export interface IEstimate extends Document {
+  kind?: 'PRIMARY' | 'ADDITIONAL';
   number: string;
   serviceRequestId?: Schema.Types.ObjectId;
   leadId?: Schema.Types.ObjectId;
@@ -33,6 +34,7 @@ export interface IEstimate extends Document {
 const estimateSchema = new Schema<IEstimate>(
   {
     ...financialDocumentCommonFields,
+    kind: { type: String, enum: ['PRIMARY', 'ADDITIONAL'], default: 'PRIMARY' },
     status: { type: String, enum: ESTIMATE_STATUSES, default: 'DRAFT' },
     validUntil: { type: Date },
   },

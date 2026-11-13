@@ -1,3 +1,6 @@
+import { runEstimateRecovery } from './modules/finance/estimateSync';
+import { recoverGatewayPayments } from './modules/finance/gatewayPayments.service';
+import { ensureAppIndexes } from './lib/ensureAppIndexes';
 import http from 'http';
 import { createApp } from './app';
 import { connectDb } from './lib/db';
@@ -15,6 +18,7 @@ import { backfillCustomerProfiles } from './modules/customer-profiles/customerPr
 
 async function main(): Promise<void> {
   await connectDb();
+  await ensureAppIndexes();
   await upgradeRegistrationLifecycle();
   await renameMenuAccessKeys();
   await mergeSofaCleaningIntoHomeCleaning();
@@ -27,6 +31,11 @@ async function main(): Promise<void> {
   startEscalationCheckInterval();
   startHappyCallSchedulerInterval();
   startCampaignSchedulerInterval();
+  const financeRecovery = setInterval(() => { void runEstimateRecovery().catch(error => console.error('[finance-recovery]', error)); }, 30000);
+  financeRecovery.unref();
+  const gatewayRecovery = setInterval(() => { void recoverGatewayPayments().catch(error => console.error('[gateway-recovery]', error)); }, 60000);
+  gatewayRecovery.unref();
+  void runEstimateRecovery().catch(error => console.error('[finance-recovery]', error));
 
   // Customer Section: one-time build of profiles from existing calls /
   // enquiries — in the background, so start-up doesn't wait on it.

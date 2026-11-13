@@ -5,6 +5,8 @@ export const PROFORMA_INVOICE_STATUSES = ['DRAFT', 'SHARED', 'ACCEPTED', 'CONVER
 export type ProformaInvoiceStatus = (typeof PROFORMA_INVOICE_STATUSES)[number];
 
 export interface IProformaInvoice extends Document {
+  estimateIds?: Schema.Types.ObjectId[];
+  billingKey?: string;
   number: string;
   serviceRequestId?: Schema.Types.ObjectId;
   leadId?: Schema.Types.ObjectId;
@@ -33,12 +35,16 @@ export interface IProformaInvoice extends Document {
 const proformaInvoiceSchema = new Schema<IProformaInvoice>(
   {
     ...financialDocumentCommonFields,
+    estimateIds: [{ type: Schema.Types.ObjectId, ref: 'Estimate' }],
+    billingKey: String,
     status: { type: String, enum: PROFORMA_INVOICE_STATUSES, default: 'DRAFT' },
     estimateId: { type: Schema.Types.ObjectId, ref: 'Estimate' },
   },
   { timestamps: true }
 );
 
+proformaInvoiceSchema.index({ estimateId: 1 }, { unique: true, partialFilterExpression: { estimateId: { $type: 'objectId' } } });
+proformaInvoiceSchema.index({ billingKey: 1 }, { unique: true, partialFilterExpression: { billingKey: { $type: 'string' } } });
 proformaInvoiceSchema.index({ serviceRequestId: 1 });
 proformaInvoiceSchema.index({ customerId: 1 });
 proformaInvoiceSchema.index({ status: 1 });

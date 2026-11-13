@@ -1,3 +1,9 @@
+import { InvoiceModel } from '../finance/invoices.model';
+import { EstimateModel } from '../finance/estimates.model';
+import mongoose, { ClientSession } from 'mongoose';
+import { indiaDay } from '../../lib/indiaDate';
+import { quoteService } from '../catalog/servicePricing';
+import { ServiceVisitModel } from '../field-execution/serviceVisits.model';
 import { Types } from 'mongoose';
 import { ServiceRequestModel, ServiceRequestStatus, AssigneeType, IServiceRequest } from './serviceRequests.model';
 import { AssignmentHistoryModel } from './assignmentHistory.model';
@@ -72,8 +78,8 @@ export async function listServiceRequests(params: ListParams, scope: DataScope, 
   if (params.customerId) filter.customerId = params.customerId;
   if (params.q) filter.number = { $regex: params.q, $options: 'i' };
   if (params.vertical) filter.serviceId = { $in: await resolveVerticalServiceIds(params.vertical) };
-  if (scope === 'BRANCH' && user.branchId) filter.branchId = user.branchId;
-  if (scope === 'SUB_BRANCH' && user.subBranchId) filter.subBranchId = user.subBranchId;
+  if (scope === 'BRANCH') filter.branchId = user.branchId ?? null;
+  if (scope === 'SUB_BRANCH') filter.subBranchId = user.subBranchId ?? null;
   if (scope === 'OWN' && CUSTOMER_ROLES_FOR_SCOPE.includes(user.role)) {
     const ownCustomer = await CustomerModel.findOne({ userId: user.sub }).select('_id');
     filter.customerId = ownCustomer ? ownCustomer._id : null;
@@ -93,6 +99,7 @@ export async function listServiceRequests(params: ListParams, scope: DataScope, 
   if ((scope === 'VENDOR' || scope === 'OWN') && VENDOR_ROLES_FOR_SCOPE.includes(user.role)) {
     filter.assigneeType = 'VENDOR';
     filter.assigneeId = user.vendorId ?? null;
+    if (user.role === 'VENDOR_TECHNICIAN') filter.vendorTechnicianUserId = user.sub;
   }
 
   const skip = (params.page - 1) * params.limit;
@@ -113,13 +120,13 @@ export async function listServiceRequests(params: ListParams, scope: DataScope, 
   const shaped = items.map((item) => {
     const obj = item.toObject();
     const customer = obj.customerId as unknown as { _id: Types.ObjectId; name: string; contacts: { mobile: string; isPrimary: boolean }[] } | null;
-    const service = obj.serviceId as unknown as { _id: Types.ObjectId; name: string } | null;
+    const service = obj.serviceId as unknown as { _id: Types.ObjectId; name: string; mandatoryChecklist?: string[] } | null;
     return {
       ...obj,
       customerId: customer?._id,
       customer: customer ? { name: customer.name, mobile: customer.contacts.find((c) => c.isPrimary)?.mobile ?? customer.contacts[0]?.mobile } : null,
       serviceId: service?._id,
-      service: service ? { name: service.name } : null,
+      service: service ? { _id: service._id, name: service.name, mandatoryChecklist: service.mandatoryChecklist ?? [] } : null,
       assignee:
         item.assigneeType && item.assigneeId
           ? { type: item.assigneeType, name: nameByAssignee.get(`${item.assigneeType}:${item.assigneeId.toString()}`) ?? null }
@@ -184,7 +191,7 @@ async function resolveAssigneeNames(
 export async function getServiceRequest(id: string) {
   const sr = await ServiceRequestModel.findById(id)
     .populate<{ customerId: { name: string; contacts: { mobile: string; isPrimary: boolean }[] } }>('customerId', 'name contacts')
-    .populate<{ serviceId: { name: string } }>('serviceId', 'name')
+    .populate<{ serviceId: { name: string; mandatoryChecklist: string[] } }>('serviceId', 'name mandatoryChecklist')
     .populate<{ createdBy: { name: string } }>('createdBy', 'name')
     .populate<{
       customerProductId: { brandId: { label: string }; productTypeId: { label: string }; modelNumber?: string; purchaseDate?: Date; warrantyExpiresAt?: Date } | null;
@@ -204,7 +211,7 @@ export async function getServiceRequest(id: string) {
 
   const obj = sr.toObject();
   const customer = obj.customerId as unknown as { _id: Types.ObjectId; name: string; contacts: { mobile: string; isPrimary: boolean }[] } | null;
-  const service = obj.serviceId as unknown as { _id: Types.ObjectId; name: string } | null;
+  const service = obj.serviceId as unknown as { _id: Types.ObjectId; name: string; mandatoryChecklist?: string[] } | null;
   const createdByUser = obj.createdBy as unknown as { name: string } | null;
   const customerProduct = obj.customerProductId as unknown as {
     brandId: { label: string };
@@ -219,7 +226,7 @@ export async function getServiceRequest(id: string) {
     customerId: customer?._id,
     serviceId: service?._id,
     customer: customer ? { name: customer.name, mobile: customer.contacts.find((c) => c.isPrimary)?.mobile ?? customer.contacts[0]?.mobile } : null,
-    service: service ? { name: service.name } : null,
+    service: service ? { _id: service._id, name: service.name, mandatoryChecklist: service.mandatoryChecklist ?? [] } : null,
     createdByName: createdByUser?.name ?? null,
     customerProduct: customerProduct
       ? {
@@ -234,10 +241,13 @@ export async function getServiceRequest(id: string) {
   };
 }
 export async function assertOwnServiceRequestAccess(
-  sr: { customerId?: unknown; assigneeType?: unknown; assigneeId?: unknown },
+  sr: { customerId?: unknown; assigneeType?: unknown; assigneeId?: unknown; vendorTechnicianUserId?: unknown; branchId?: unknown; subBranchId?: unknown },
   scope: DataScope,
   user: AccessTokenPayload
 ): Promise<void> {
+  if (user.role === 'VENDOR_TECHNICIAN' && sr.vendorTechnicianUserId?.toString() !== user.sub) throw new NotFoundError('Service request not found');
+  if (scope === 'BRANCH' && (!user.branchId || sr.branchId?.toString() !== user.branchId)) throw new NotFoundError('Service request not found');
+  if (scope === 'SUB_BRANCH' && (!user.subBranchId || sr.subBranchId?.toString() !== user.subBranchId)) throw new NotFoundError('Service request not found');
   // VENDOR_OWNER/VENDOR_MANAGER get dataScope 'VENDOR' (not 'OWN') on
   // serviceRequests (scripts/seed.ts) — must be checked here too, or a
   // single-record fetch by ID bypasses the vendor-scoping listServiceRequests
@@ -291,24 +301,37 @@ async function resolveBranch(serviceId: string, pinCode: string): Promise<IBranc
 export async function createServiceRequest(data: Record<string, unknown> & { addressSnapshot: { pinCode: string } }, actor: AccessTokenPayload) {
   const branch = await resolveBranch(data.serviceId as string, data.addressSnapshot.pinCode);
   const service = await ServiceModel.findById(data.serviceId);
-
-  if (branch && data.scheduledDate && data.scheduledSlot) {
-    await assertSlotAvailable(branch._id.toString(), data.scheduledDate as Date, data.scheduledSlot as string);
+  if (!service || !service.active) throw new NotFoundError('Active service not found');
+  if (!branch && data.source === 'CUSTOMER_APP') throw new ConflictError('Address is outside service coverage', 'NOT_SERVICEABLE');
+  const bookingPrice = await quoteService(service, data as { hours?: number; helpers?: number }, { branchState: branch?.registeredAddress?.state ?? '', customerState: (data.addressSnapshot as { state?: string }).state ?? '' });
+  if (data.expectedTotal !== undefined && data.expectedTotal !== bookingPrice.total) throw new ConflictError('Service price changed. Please review the latest price.', 'PRICE_CHANGED');
+  if (data.customerProductId) {
+    const product = await CustomerProductModel.findOne({ _id: data.customerProductId, customerId: data.customerId });
+    if (!product) throw new NotFoundError('Customer appliance not found');
+    if (service.applicableProductTypeIds.length && !service.applicableProductTypeIds.some(id => id.equals(product.productTypeId))) throw new ConflictError('Appliance does not match this service', 'PRODUCT_MISMATCH');
   }
+
+  if (Boolean(data.scheduledDate) !== Boolean(data.scheduledSlot)) throw new ConflictError('Choose both date and time slot', 'SCHEDULE_REQUIRED');
 
   const number = await getNextNumber('SERVICE_REQUEST', branch?._id.toString());
   const dueAt = branch
     ? addBusinessMinutes(new Date(), service?.slaMinutes ?? 1440, branch)
     : addBusinessMinutes(new Date(), service?.slaMinutes ?? 1440, null);
 
-  const sr = await ServiceRequestModel.create({
+  const session = await mongoose.startSession();
+  let sr!: InstanceType<typeof ServiceRequestModel>;
+  try { await session.withTransaction(async () => {
+  if (branch && data.scheduledDate && data.scheduledSlot) await assertSlotAvailable(branch._id.toString(), data.scheduledDate as Date, data.scheduledSlot as string, undefined, session);
+  [sr] = await ServiceRequestModel.create([{
     ...data,
+    bookingPrice,
     number,
     branchId: branch?._id,
     status: branch ? 'ASSIGNED_TO_BRANCH' : 'NEEDS_MANUAL_BRANCH_ASSIGNMENT',
     sla: { dueAt },
     createdBy: actor.sub,
-  });
+  }], { session });
+  }); } finally { await session.endSession(); }
 
   await logActivity({
     entityType: 'SERVICE_REQUEST',
@@ -351,11 +374,11 @@ function assertNotBeforeScheduledDate(sr: Pick<IServiceRequest, 'scheduledDate' 
   if (TERMINAL_ROLES_WITH_BYPASS.includes(actorRole)) return;
 
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const scheduledDay = new Date(sr.scheduledDate);
-  scheduledDay.setHours(0, 0, 0, 0);
 
-  if (scheduledDay.getTime() > today.getTime()) {
+  const scheduledDay = new Date(sr.scheduledDate);
+
+
+  if (indiaDay(scheduledDay) > indiaDay(today)) {
     throw new ConflictError(
       `${sr.number} is scheduled for ${scheduledDay.toLocaleDateString('en-IN')}, not today. You can start travel on the scheduled day.`,
       'JOB_NOT_YET_DUE'
@@ -363,18 +386,36 @@ function assertNotBeforeScheduledDate(sr: Pick<IServiceRequest, 'scheduledDate' 
   }
 }
 
-export async function updateStatus(id: string, toStatus: ServiceRequestStatus, actor: AccessTokenPayload, meta: StatusChangeMeta = {}) {
-  const sr = await ServiceRequestModel.findById(id);
+export async function updateStatus(id: string, toStatus: ServiceRequestStatus, actor: AccessTokenPayload, meta: StatusChangeMeta = {}, session?: ClientSession) {
+  const sr = await ServiceRequestModel.findById(id).session(session ?? null);
   if (!sr) throw new NotFoundError('Service request not found');
 
-  assertValidTransition('SERVICE_REQUEST', sr.status, toStatus, actor.role);
+  if (!(sr.status === 'TECHNICIAN_ARRIVED' && toStatus === 'WORK_STARTED' && sr.bookingPrice && sr.bookingPrice.mode !== 'ESTIMATE' && ['EMPLOYEE', 'TECHNICIAN', 'VENDOR_TECHNICIAN', 'ADMIN', 'SUPER_ADMIN'].includes(actor.role))) assertValidTransition('SERVICE_REQUEST', sr.status, toStatus, actor.role);
   assertNotBeforeScheduledDate(sr, toStatus, actor.role);
 
+  if (toStatus === 'PAID' || toStatus === 'PARTIALLY_PAID') {
+    const invoice = await InvoiceModel.findOne({ serviceRequestId: id, status: toStatus }).session(session ?? null);
+    if (!invoice || invoice.amountPaid <= 0) throw new ConflictError('Record a verified collection before marking the job paid', 'PAYMENT_REQUIRED');
+  }
+  if (toStatus === 'WORK_STARTED' && (!sr.bookingPrice || sr.bookingPrice.mode === 'ESTIMATE')) {
+    const approved = await EstimateModel.exists({ serviceRequestId: id, status: { $in: ['APPROVED', 'CONVERTED'] } }).session(session ?? null);
+    if (!approved) throw new ConflictError('The customer must approve the repair estimate before work starts', 'ESTIMATE_APPROVAL_REQUIRED');
+  }
+  if (toStatus === 'SERVICE_COMPLETED') {
+    const visit = await ServiceVisitModel.findOne({ serviceRequestId: id, completedAt: { $exists: true }, 'completionProof.type': { $in: ['OTP', 'SIGNATURE'] } }).session(session ?? null);
+    if (!visit) throw new ConflictError('Customer completion proof is required', 'COMPLETION_PROOF_REQUIRED');
+    const service = await ServiceModel.findById(sr.serviceId);
+    const visits = await ServiceVisitModel.find({ serviceRequestId: id }).session(session ?? null);
+    const completedChecks = new Set(visits.flatMap(v => v.checklist ?? []));
+    if (service?.mandatoryChecklist.some(item => !completedChecks.has(item))) throw new ConflictError('Complete the required checklist first', 'CHECKLIST_REQUIRED');
+    if (visits.reduce((n, v) => n + v.beforeImages.length, 0) < (service?.requiredImages?.before ?? 0) || visits.reduce((n, v) => n + v.afterImages.length, 0) < (service?.requiredImages?.after ?? 0)) throw new ConflictError('Required service photos are missing', 'PHOTOS_REQUIRED');
+  }
   const fromStatus = sr.status;
   sr.status = toStatus;
   if (toStatus === 'SERVICE_COMPLETED') sr.completedAt = new Date();
   if (toStatus === 'CLOSED') sr.closedAt = new Date();
-  await sr.save();
+  await sr.save({ session });
+  if (session) return sr;
 
   await logActivity({
     entityType: 'SERVICE_REQUEST',
@@ -417,15 +458,17 @@ export async function rescheduleServiceRequest(id: string, input: RescheduleInpu
 
   assertValidTransition('SERVICE_REQUEST', sr.status, 'RESCHEDULED', actor.role);
 
-  if (sr.branchId) {
-    await assertSlotAvailable(sr.branchId.toString(), input.scheduledDate, input.scheduledSlot);
-  }
+
 
   const fromStatus = sr.status;
   sr.status = 'RESCHEDULED';
   sr.scheduledDate = input.scheduledDate;
   sr.scheduledSlot = input.scheduledSlot;
-  await sr.save();
+  const session = await mongoose.startSession();
+  try { await session.withTransaction(async () => {
+    if (sr.branchId) await assertSlotAvailable(sr.branchId.toString(), input.scheduledDate, input.scheduledSlot, id, session);
+    await sr.save({ session });
+  }); } finally { await session.endSession(); }
 
   await logActivity({
     entityType: 'SERVICE_REQUEST',
@@ -493,6 +536,7 @@ export async function assignServiceRequest(id: string, input: AssignInput, actor
   const fromAssigneeType = sr.assigneeType;
   const fromAssigneeId = sr.assigneeId;
 
+  sr.vendorTechnicianUserId = undefined;
   sr.assigneeType = input.assigneeType;
   sr.assigneeId = input.assigneeId as never;
   sr.status = toStatus;
@@ -512,6 +556,11 @@ export async function assignServiceRequest(id: string, input: AssignInput, actor
   });
 
   emitServiceRequestAssigned(id, { serviceRequestId: id, assigneeType: input.assigneeType, assigneeId: input.assigneeId });
+  if (input.assigneeType === 'VENDOR' || input.assigneeType === 'TEAM') {
+    const recipients = await UserModel.find({ [input.assigneeType === 'VENDOR' ? 'vendorId' : 'teamId']: input.assigneeId, status: 'ACTIVE' }).select('_id');
+    for (const recipient of recipients) await trigger('SERVICE_REQUEST_ASSIGNED', { recipient: { userId: recipient._id.toString() }, variables: { serviceRequestId: id } });
+  }
+
 
   // Only EMPLOYEE assignees resolve directly to a single notifiable User today
   // (via Employee.userId) — BRANCH/SUB_BRANCH/TEAM/VENDOR/OUTSOURCED_PARTNER
@@ -897,6 +946,8 @@ export async function requestCompletionOtp(serviceRequestId: string): Promise<vo
   const otp = env.nodeEnv === 'production' ? generateOtp() : '123456';
   await OtpModel.create({
     mobile,
+    purpose: 'COMPLETION',
+    serviceRequestId,
     otpHash: hashOtp(otp),
     expiresAt: new Date(Date.now() + 10 * 60 * 1000),
   });
@@ -914,7 +965,8 @@ export async function verifyCompletionOtp(serviceRequestId: string, otp: string)
   const customer = await CustomerModel.findById(sr.customerId);
   const mobile = customer?.contacts.find((c) => c.isPrimary)?.mobile ?? customer?.contacts[0]?.mobile;
 
-  const record = await OtpModel.findOne({ mobile }).sort({ createdAt: -1 });
+  const record = await OtpModel.findOne({ mobile, purpose: 'COMPLETION', serviceRequestId }).sort({ createdAt: -1 });
+  if (record?.verified && record.otpHash === hashOtp(otp) && record.expiresAt > new Date() && sr.completionVerifiedAt && Date.now() - sr.completionVerifiedAt.getTime() < 600000) return { verified: true };
   if (!record || record.verified || record.expiresAt < new Date()) {
     throw new UnauthorizedError('OTP expired or not found. Please request a new one.');
   }
@@ -929,6 +981,7 @@ export async function verifyCompletionOtp(serviceRequestId: string, otp: string)
 
   record.verified = true;
   await record.save();
+  await ServiceRequestModel.updateOne({ _id: serviceRequestId }, { $set: { completionVerifiedAt: new Date() } });
   return { verified: true };
 }
 

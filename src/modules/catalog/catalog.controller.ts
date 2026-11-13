@@ -1,3 +1,6 @@
+import { ServiceModel } from './catalog.model';
+import { quoteService } from './servicePricing';
+import { NotFoundError } from '../../lib/errors';
 import { Response, NextFunction } from 'express';
 import * as catalogService from './catalog.service';
 import { sendSuccess, paramAsString } from '../../lib/apiResponse';
@@ -97,3 +100,5 @@ export async function clearUnusedDiagnosticLinksHandler(_req: ScopedRequest, res
     next(err);
   }
 }
+
+export async function quoteServiceHandler(req: ScopedRequest, res: Response, next: NextFunction) { try { const service = await ServiceModel.findById(paramAsString(req.params.id)); if (!service || !service.active) throw new NotFoundError('Active service not found'); sendSuccess(res, await quoteService(service, req.body), 'Booking price calculated'); } catch (error) { next(error); } }

@@ -1,3 +1,4 @@
+import { assertFinanceAccess, assertFinanceStaff } from './financeAccess';
 import { CreditNoteModel, DebitNoteModel } from './creditDebitNotes.model';
 import { InvoiceModel } from './invoices.model';
 import { NotFoundError } from '../../lib/errors';
@@ -18,6 +19,8 @@ interface NoteInput {
 export async function issueCreditNote(input: NoteInput, actor: AccessTokenPayload) {
   const invoice = await InvoiceModel.findById(input.invoiceId);
   if (!invoice) throw new NotFoundError('Invoice not found');
+  assertFinanceStaff(actor);
+  await assertFinanceAccess(invoice, actor);
 
   const number = await getNextNumber('CREDIT_NOTE', invoice.branchId.toString());
   const note = await CreditNoteModel.create({
@@ -49,6 +52,8 @@ export async function issueCreditNote(input: NoteInput, actor: AccessTokenPayloa
 export async function issueDebitNote(input: NoteInput, actor: AccessTokenPayload) {
   const invoice = await InvoiceModel.findById(input.invoiceId);
   if (!invoice) throw new NotFoundError('Invoice not found');
+  assertFinanceStaff(actor);
+  await assertFinanceAccess(invoice, actor);
 
   const number = await getNextNumber('DEBIT_NOTE', invoice.branchId.toString());
   const note = await DebitNoteModel.create({
@@ -77,7 +82,10 @@ export async function issueDebitNote(input: NoteInput, actor: AccessTokenPayload
   return note;
 }
 
-export async function listNotesForInvoice(invoiceId: string) {
+export async function listNotesForInvoice(invoiceId: string, actor?: AccessTokenPayload) {
+  const invoice = await InvoiceModel.findById(invoiceId);
+  if (!invoice) throw new NotFoundError('Invoice not found');
+  await assertFinanceAccess(invoice, actor);
   const [creditNotes, debitNotes] = await Promise.all([
     CreditNoteModel.find({ invoiceId }).sort({ createdAt: -1 }),
     DebitNoteModel.find({ invoiceId }).sort({ createdAt: -1 }),

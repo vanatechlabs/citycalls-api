@@ -60,6 +60,7 @@ export async function updateVendorHandler(req: ScopedRequest, res: Response, nex
     if (!req.user || !req.scope) throw new UnauthorizedError();
     const id = paramAsString(req.params.id);
     await vendorService.assertVendorAccessInScope(id, req.scope, req.user);
+    if (req.body.commissionModel !== undefined || req.body.commissionRate !== undefined || req.body.serviceCommissionRates !== undefined) assertAdminOnly(req);
     const vendor = await vendorService.updateVendor(id, req.body);
     sendSuccess(res, vendor, 'Vendor updated successfully');
   } catch (err) {

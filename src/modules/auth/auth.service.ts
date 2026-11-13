@@ -162,6 +162,7 @@ export async function requestOtp(mobile: string): Promise<void> {
 
   await OtpModel.create({
     mobile,
+    purpose: 'LOGIN',
     otpHash,
     expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes, per docs/17 §4
   });
@@ -172,7 +173,7 @@ export async function requestOtp(mobile: string): Promise<void> {
 }
 
 export async function verifyOtp(mobile: string, otp: string, meta: SessionMeta): Promise<AuthResult> {
-  const record = await OtpModel.findOne({ mobile }).sort({ createdAt: -1 });
+  const record = await OtpModel.findOne({ mobile, purpose: 'LOGIN' }).sort({ createdAt: -1 });
   if (!record || record.verified || record.expiresAt < new Date()) {
     throw new UnauthorizedError('OTP expired or not found. Please request a new one.');
   }

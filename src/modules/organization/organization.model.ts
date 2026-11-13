@@ -15,6 +15,7 @@ export interface IBranch extends Document {
   serviceCategoryIds: Types.ObjectId[];
   workingHours: WorkingHours[];
   holidays: Date[];
+  schedulingVersion: number;
   dailyCapacityPerSlot: number;
   managerId?: Types.ObjectId;
   active: boolean;
@@ -44,6 +45,7 @@ const branchSchema = new Schema<IBranch>(
       },
     ],
     holidays: { type: [Date], default: [] },
+    schedulingVersion: { type: Number, default: 0 },
     dailyCapacityPerSlot: { type: Number, default: 5, min: 1 },
     managerId: { type: Schema.Types.ObjectId, ref: 'User' },
     active: { type: Boolean, default: true },

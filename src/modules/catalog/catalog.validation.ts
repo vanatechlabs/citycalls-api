@@ -15,10 +15,12 @@ export const createServiceSchema = z.object({
   expectedDurationMinutes: z.number().default(60),
   pricing: z
     .object({
-      basePrice: z.number().default(0),
-      visitingCharge: z.number().default(0),
-      inspectionCharge: z.number().default(0),
-      emergencyCharge: z.number().default(0),
+      mode: z.enum(['FIXED', 'HOURLY', 'ESTIMATE']).optional(),
+      hourlyRate: z.number().nonnegative().optional(),
+      basePrice: z.number().nonnegative().default(0),
+      visitingCharge: z.number().nonnegative().default(0),
+      inspectionCharge: z.number().nonnegative().default(0),
+      emergencyCharge: z.number().nonnegative().default(0),
     })
     .default({ basePrice: 0, visitingCharge: 0, inspectionCharge: 0, emergencyCharge: 0 }),
   taxRateId: z.string().optional(),
@@ -46,10 +48,12 @@ export const updateServiceSchema = z.object({
   expectedDurationMinutes: z.number().optional(),
   pricing: z
     .object({
-      basePrice: z.number().default(0),
-      visitingCharge: z.number().default(0),
-      inspectionCharge: z.number().default(0),
-      emergencyCharge: z.number().default(0),
+      mode: z.enum(['FIXED', 'HOURLY', 'ESTIMATE']).optional(),
+      hourlyRate: z.number().nonnegative().optional(),
+      basePrice: z.number().nonnegative().default(0),
+      visitingCharge: z.number().nonnegative().default(0),
+      inspectionCharge: z.number().nonnegative().default(0),
+      emergencyCharge: z.number().nonnegative().default(0),
     })
     .optional(),
   taxRateId: z.string().optional(),

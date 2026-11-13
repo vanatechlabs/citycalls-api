@@ -36,6 +36,7 @@ export interface IServiceVisit extends Document {
   labourCharge?: number;
   beforeImages: string[];
   afterImages: string[];
+  checklist: string[];
   workNotes?: string;
   completedAt?: Date;
   completionProof?: ICompletionProof;
@@ -67,6 +68,7 @@ const serviceVisitSchema = new Schema<IServiceVisit>(
     labourCharge: { type: Number },
     beforeImages: { type: [String], default: [] },
     afterImages: { type: [String], default: [] },
+    checklist: { type: [String], default: [] },
     workNotes: { type: String },
     completedAt: { type: Date },
     completionProof: {

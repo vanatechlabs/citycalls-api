@@ -1,3 +1,8 @@
+import { saveEstimateWithSync } from './estimateSync';
+import { InvoiceModel } from './invoices.model';
+import { ProformaInvoiceModel } from './proformaInvoices.model';
+import { ServiceRequestModel } from '../service-requests/serviceRequests.model';
+import { assertFinanceAccess, assertFinanceStaff, financeFilter } from './financeAccess';
 import { EstimateModel } from './estimates.model';
 import { BranchModel } from '../organization/organization.model';
 import { CustomerModel } from '../customers/customers.model';
@@ -12,25 +17,6 @@ import { logActivity } from '../../lib/auditLog';
 import { AccessTokenPayload } from '../../lib/jwt';
 import { DataScope } from '../users/users.types';
 import { isCustomerRole, resolveOwnCustomerId } from '../../lib/ownCustomerScope';
-import { updateStatus as updateServiceRequestStatus } from '../service-requests/serviceRequests.service';
-import { ServiceRequestStatus } from '../service-requests/serviceRequests.model';
-async function syncServiceRequestStatus(
-  serviceRequestId: unknown,
-  toStatus: ServiceRequestStatus,
-  actor: AccessTokenPayload,
-  reason: string
-): Promise<void> {
-  if (!serviceRequestId) return;
-  try {
-    await updateServiceRequestStatus(serviceRequestId.toString(), toStatus, actor, { reason });
-  } catch (err) {
-    console.error(
-      `[estimates] failed to sync ServiceRequest ${serviceRequestId.toString()} to status ${toStatus} (reason: ${reason})`,
-      err
-    );
-  }
-}
-
 interface LineItemInput {
   description: string;
   partId?: string;
@@ -57,12 +43,22 @@ async function resolveGstStates(branchId: string, customerId: string): Promise<{
 }
 
 export async function createEstimate(input: CreateEstimateInput, actor: AccessTokenPayload) {
+  assertFinanceStaff(actor);
+  await assertFinanceAccess(input, actor);
+  let kind: 'PRIMARY' | 'ADDITIONAL' = 'PRIMARY';
+  if (input.serviceRequestId) {
+    const job = await ServiceRequestModel.findById(input.serviceRequestId);
+    if (await InvoiceModel.exists({ serviceRequestId: input.serviceRequestId, status: { $ne: 'CANCELLED' } })) throw new ConflictError('Invoice already issued. Use a debit/credit note or a new request.', 'INVOICE_ALREADY_ISSUED');
+    if (job && (['ESTIMATE_APPROVED', 'WORK_STARTED', 'WORK_IN_PROGRESS', 'ON_HOLD', 'PARTS_PENDING'].includes(job.status) || await EstimateModel.exists({ serviceRequestId: input.serviceRequestId, status: { $in: ['APPROVED', 'CONVERTED'] } }))) kind = 'ADDITIONAL';
+    if (!job || job.customerId.toString() !== input.customerId || job.branchId?.toString() !== input.branchId) throw new ConflictError('Estimate must match the booked customer and branch', 'JOB_MISMATCH');
+  }
   const { branchState, customerState } = await resolveGstStates(input.branchId, input.customerId);
   const totals = await computeDocumentTotals(input.items, input.discount ?? 0, branchState, customerState);
 
   const number = await getNextNumber('ESTIMATE', input.branchId);
 
-  const estimate = await EstimateModel.create({
+  const estimate = new EstimateModel({
+    kind,
     number,
     serviceRequestId: input.serviceRequestId,
     leadId: input.leadId,
@@ -78,6 +74,8 @@ export async function createEstimate(input: CreateEstimateInput, actor: AccessTo
     validUntil: input.validUntil,
   });
 
+  await saveEstimateWithSync(estimate, actor);
+  if (input.serviceRequestId) await ProformaInvoiceModel.updateMany({ serviceRequestId: input.serviceRequestId, status: { $in: ['DRAFT', 'SHARED', 'ACCEPTED'] } }, { $set: { status: 'CANCELLED' } });
   await logActivity({
     entityType: 'ESTIMATE',
     entityId: estimate._id.toString(),
@@ -87,7 +85,6 @@ export async function createEstimate(input: CreateEstimateInput, actor: AccessTo
     newValue: { number, total: totals.total },
   });
 
-  await syncServiceRequestStatus(input.serviceRequestId, 'ESTIMATE_PENDING', actor, `Estimate ${number} created`);
 
   return estimate;
 }
@@ -107,6 +104,7 @@ export async function listEstimates(
     filter.customerId = ownId ?? null;
   }
 
+  Object.assign(filter, await financeFilter(user));
   const skip = (params.page - 1) * params.limit;
   const [items, total] = await Promise.all([
     EstimateModel.find(filter).skip(skip).limit(params.limit).sort({ createdAt: -1 }),
@@ -118,7 +116,7 @@ export async function listEstimates(
 export async function getEstimate(id: string, actor?: AccessTokenPayload) {
   const estimate = await EstimateModel.findById(id);
   if (!estimate) throw new NotFoundError('Estimate not found');
-  await assertOwnIfCustomer(estimate.customerId, actor);
+  await assertFinanceAccess(estimate, actor);
   return estimate;
 }
 
@@ -126,30 +124,25 @@ export async function getEstimate(id: string, actor?: AccessTokenPayload) {
 // (scripts/seed.ts) — no other scope value applies to those roles for this
 // permission, so this doesn't need req.scope threaded through on top of the
 // role check itself.
-async function assertOwnIfCustomer(recordCustomerId: unknown, actor?: AccessTokenPayload): Promise<void> {
-  if (!actor || !isCustomerRole(actor.role)) return;
-  const ownId = await resolveOwnCustomerId(actor.sub);
-  const recordId = (recordCustomerId as { toString(): string } | undefined)?.toString();
-  if (!ownId || recordId !== ownId) throw new NotFoundError('Estimate not found');
-}
 
 export async function shareEstimate(id: string, channels: string[], actor: AccessTokenPayload) {
   const estimate = await EstimateModel.findById(id);
   if (!estimate) throw new NotFoundError('Estimate not found');
 
+  assertFinanceStaff(actor);
+  await assertFinanceAccess(estimate, actor);
+  if (estimate.status === 'SHARED') { await saveEstimateWithSync(estimate, actor); return estimate; }
   assertValidTransition('ESTIMATE', estimate.status, 'SHARED', actor.role);
 
   estimate.pdfUrl = await generateDocumentPdf('ESTIMATE', id);
   estimate.status = 'SHARED';
   estimate.sentVia = channels;
-  await estimate.save();
+  await saveEstimateWithSync(estimate, actor);
 
   await trigger('ESTIMATE_SHARED', {
     recipient: { customerId: estimate.customerId.toString() },
     variables: { estimateId: id, number: estimate.number, total: estimate.total },
   });
-  await syncServiceRequestStatus(estimate.serviceRequestId, 'ESTIMATE_SHARED', actor, `Estimate ${estimate.number} shared`);
-  await syncServiceRequestStatus(estimate.serviceRequestId, 'AWAITING_CUSTOMER_APPROVAL', actor, `Estimate ${estimate.number} shared`);
 
   return estimate;
 }
@@ -157,9 +150,10 @@ export async function shareEstimate(id: string, channels: string[], actor: Acces
 export async function respondToEstimate(id: string, approve: boolean, actor: AccessTokenPayload) {
   const estimate = await EstimateModel.findById(id);
   if (!estimate) throw new NotFoundError('Estimate not found');
-  await assertOwnIfCustomer(estimate.customerId, actor);
+  await assertFinanceAccess(estimate, actor);
 
   const toStatus = approve ? 'APPROVED' : 'REJECTED';
+  if (estimate.status === toStatus) { await saveEstimateWithSync(estimate, actor); return estimate; }
   assertValidTransition('ESTIMATE', estimate.status, toStatus, actor.role);
 
   estimate.status = toStatus;
@@ -167,7 +161,7 @@ export async function respondToEstimate(id: string, approve: boolean, actor: Acc
     estimate.approvedBy = actor.sub as never;
     estimate.approvedAt = new Date();
   }
-  await estimate.save();
+  await saveEstimateWithSync(estimate, actor);
 
   await logActivity({
     entityType: 'ESTIMATE',
@@ -177,12 +171,6 @@ export async function respondToEstimate(id: string, approve: boolean, actor: Acc
     module: 'finance',
   });
 
-  await syncServiceRequestStatus(
-    estimate.serviceRequestId,
-    approve ? 'ESTIMATE_APPROVED' : 'ESTIMATE_REJECTED',
-    actor,
-    `Estimate ${estimate.number} ${approve ? 'approved' : 'rejected'}`
-  );
 
   return estimate;
 }
@@ -202,6 +190,7 @@ export async function assertConvertible(id: string) {
 export async function markConverted(id: string, actor: AccessTokenPayload) {
   const estimate = await EstimateModel.findById(id);
   if (!estimate) throw new NotFoundError('Estimate not found');
+  if (estimate.status === 'CONVERTED') return;
   assertValidTransition('ESTIMATE', estimate.status, 'CONVERTED', actor.role);
   estimate.status = 'CONVERTED';
   await estimate.save();

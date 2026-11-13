@@ -66,6 +66,7 @@ export const env = {
   },
   // Help Now online payments. Online checkout is off until both are set.
   razorpay: {
+    webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET,
     keyId: process.env.RAZORPAY_KEY_ID,
     keySecret: process.env.RAZORPAY_KEY_SECRET,
   },

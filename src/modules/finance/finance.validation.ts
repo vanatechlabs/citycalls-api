@@ -36,6 +36,7 @@ export const cancelInvoiceSchema = z.object({
 });
 
 export const recordPaymentSchema = z.object({
+  idempotencyKey: z.string().min(8).max(120),
   amount: z.number().positive(),
   method: z.enum(PAYMENT_METHODS),
   reference: z.string().optional(),

@@ -92,7 +92,7 @@ export async function listProformaInvoicesHandler(req: ScopedRequest, res: Respo
 
 export async function getProformaInvoiceHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
-    const proforma = await proformaService.getProformaInvoice(paramAsString(req.params.id));
+    const proforma = await proformaService.getProformaInvoice(paramAsString(req.params.id), req.user);
     sendSuccess(res, proforma, 'Proforma invoice fetched successfully');
   } catch (err) {
     next(err);
@@ -173,7 +173,7 @@ export async function getInvoiceHandler(req: ScopedRequest, res: Response, next:
 export async function shareInvoiceHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
     const { channels } = req.body as { channels: string[] };
-    const invoice = await invoicesService.shareInvoice(paramAsString(req.params.id), channels);
+    const invoice = await invoicesService.shareInvoice(paramAsString(req.params.id), channels, req.user!);
     sendSuccess(res, invoice, 'Invoice shared successfully');
   } catch (err) {
     next(err);
@@ -213,7 +213,7 @@ export async function listPaymentsHandler(req: ScopedRequest, res: Response, nex
 
 export async function getPaymentReceiptHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
-    const receipt = await paymentsService.getPaymentReceipt(paramAsString(req.params.id));
+    const receipt = await paymentsService.getPaymentReceipt(paramAsString(req.params.id), req.user);
     sendSuccess(res, receipt, 'Payment receipt fetched successfully');
   } catch (err) {
     next(err);
@@ -243,7 +243,7 @@ export async function issueDebitNoteHandler(req: ScopedRequest, res: Response, n
 
 export async function listInvoiceNotesHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
-    const notes = await notesService.listNotesForInvoice(paramAsString(req.params.id));
+    const notes = await notesService.listNotesForInvoice(paramAsString(req.params.id), req.user);
     sendSuccess(res, notes, 'Credit/debit notes fetched successfully');
   } catch (err) {
     next(err);

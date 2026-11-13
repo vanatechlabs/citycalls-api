@@ -9,6 +9,7 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 // financialDocumentCommonFields used by Estimate/Proforma/Invoice. Per
 // docs/16-pdf-and-financial-documents.md §7.
 export interface IPaymentReceipt extends Document {
+  idempotencyKey?: string;
   number: string;
   invoiceId: Types.ObjectId;
   customerId: Types.ObjectId;
@@ -25,6 +26,7 @@ export interface IPaymentReceipt extends Document {
 
 const paymentReceiptSchema = new Schema<IPaymentReceipt>(
   {
+    idempotencyKey: { type: String },
     number: { type: String, required: true, unique: true },
     invoiceId: { type: Schema.Types.ObjectId, ref: 'Invoice', required: true },
     customerId: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
@@ -41,6 +43,7 @@ const paymentReceiptSchema = new Schema<IPaymentReceipt>(
 );
 
 paymentReceiptSchema.index({ invoiceId: 1 });
+paymentReceiptSchema.index({ invoiceId: 1, idempotencyKey: 1 }, { unique: true, partialFilterExpression: { idempotencyKey: { $type: 'string' } } });
 paymentReceiptSchema.index({ customerId: 1 });
 
 export const PaymentReceiptModel = model<IPaymentReceipt>('PaymentReceipt', paymentReceiptSchema);

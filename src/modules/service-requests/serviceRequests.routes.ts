@@ -1,3 +1,8 @@
+import { z } from 'zod';
+import { allocateVendorTechnician } from './vendorAllocation.service';
+import { sendSuccess, paramAsString } from '../../lib/apiResponse';
+import { ScopedRequest } from '../../middleware/permission.middleware';
+import { UnauthorizedError } from '../../lib/errors';
 import { Router } from 'express';
 import { authMiddleware } from '../../middleware/auth.middleware';
 import { optionalPermission, requirePermission } from '../../middleware/permission.middleware';
@@ -19,6 +24,7 @@ import * as ctrl from './serviceRequests.controller';
 
 const router = Router();
 
+router.patch('/service-requests/:id/vendor-technician', authMiddleware, requirePermission('vendors', 'view'), validate(z.object({ technicianUserId: z.string().regex(/^[a-f0-9]{24}$/i).nullable(), reason: z.string().trim().max(500).optional() })), async (req: ScopedRequest, res, next) => { try { if (!req.user) throw new UnauthorizedError(); sendSuccess(res, await allocateVendorTechnician(paramAsString(req.params.id), req.body.technicianUserId, req.user, req.body.reason), 'Technician allocated'); } catch (error) { next(error); } });
 router.get('/service-requests', authMiddleware, requirePermission('serviceRequests', 'view'), validate(listServiceRequestsQuerySchema, 'query'), ctrl.listServiceRequestsHandler);
 router.get('/service-requests/:id', authMiddleware, requirePermission('serviceRequests', 'view'), ctrl.getServiceRequestHandler);
 router.post('/service-requests', authMiddleware, optionalPermission('serviceRequests', 'create'), validate(createServiceRequestSchema), ctrl.createServiceRequestHandler);

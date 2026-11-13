@@ -3,6 +3,8 @@ import { Schema, model, Document } from 'mongoose';
 // Short-lived OTP for customer-app login — docs/manish/04-authentication-and-rbac-plan.md §1,
 // docs/17-security-and-audit.md §4 (rate-limited).
 export interface IOtp extends Document {
+  purpose: 'LOGIN' | 'COMPLETION';
+  serviceRequestId?: string;
   mobile: string;
   otpHash: string;
   expiresAt: Date;
@@ -13,6 +15,8 @@ export interface IOtp extends Document {
 
 const otpSchema = new Schema<IOtp>(
   {
+    purpose: { type: String, enum: ['LOGIN', 'COMPLETION'], default: 'LOGIN', required: true },
+    serviceRequestId: { type: String },
     mobile: { type: String, required: true },
     otpHash: { type: String, required: true },
     expiresAt: { type: Date, required: true },

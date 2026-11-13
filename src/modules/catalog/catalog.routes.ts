@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { Router } from 'express';
 import { authMiddleware } from '../../middleware/auth.middleware';
 import { requirePermission } from '../../middleware/permission.middleware';
@@ -9,6 +10,7 @@ const router = Router();
 
 router.get('/services', authMiddleware, requirePermission('catalog', 'view'), validate(listServicesQuerySchema, 'query'), ctrl.listServicesHandler);
 router.get('/services/:id', authMiddleware, requirePermission('catalog', 'view'), ctrl.getServiceHandler);
+router.post('/services/:id/quote', authMiddleware, requirePermission('catalog', 'view'), validate(z.object({ hours: z.number().int().min(1).max(16).optional(), helpers: z.number().int().min(1).max(4).optional() })), ctrl.quoteServiceHandler);
 router.get('/services/:id/coverage', authMiddleware, requirePermission('catalog', 'view'), ctrl.checkCoverageHandler);
 router.get('/services/:id/diagnostics', authMiddleware, requirePermission('catalog', 'view'), ctrl.getServiceDiagnosticsHandler);
 router.post('/services', authMiddleware, requirePermission('catalog', 'create'), validate(createServiceSchema), ctrl.createServiceHandler);
