@@ -21,6 +21,9 @@ export interface IUser extends Document {
   // Admin Section → Menu Access). Unset = every menu their role allows.
   // Only hides menus — page access is still enforced by role permissions.
   menuAccess?: string[];
+  // Push tokens for users with no Employee/Customer record of their own —
+  // vendor staff (VENDOR_OWNER/MANAGER/TECHNICIAN) on the vendor mobile app.
+  fcmTokens?: string[];
   // Unset on the bootstrap Super Admin created directly by the seed script
   // (not through this model's create flow) — shown as "System (seed)" on
   // the frontend, not backfilled.
@@ -53,6 +56,7 @@ const userSchema = new Schema<IUser>(
     lastLoginAt: { type: Date },
     // default undefined: not stored until Menu Access is first saved.
     menuAccess: { type: [String], default: undefined },
+    fcmTokens: { type: [String], default: undefined },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
     updatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },

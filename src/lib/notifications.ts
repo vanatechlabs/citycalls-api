@@ -17,6 +17,9 @@ export interface TriggerRecipient {
 export interface TriggerContext {
   recipient: TriggerRecipient;
   variables: Record<string, unknown>;
+  // Deliver only on these channels (default: every active template). Used
+  // where SMS/WhatsApp to every recipient would cost money for little value.
+  channels?: NotificationChannel[];
 }
 
 function renderTemplate(template: string, variables: Record<string, unknown>): string {
@@ -33,6 +36,8 @@ interface ResolvedContact {
   email?: string;
   customerId?: string;
   employeeId?: string;
+  // Set when fcmTokens came from the User document (vendor staff).
+  userTokensId?: string;
   fcmTokens?: string[];
 }
 
@@ -89,6 +94,16 @@ async function resolveContact(recipient: TriggerRecipient): Promise<ResolvedCont
     }
   }
 
+  // Vendor staff have neither a Customer nor an Employee record — their
+  // tokens live on the User (POST /auth/me/fcm-token).
+  if ((!resolved.fcmTokens || resolved.fcmTokens.length === 0) && resolved.userId && !resolved.customerId && !resolved.employeeId) {
+    const user = await UserModel.findById(resolved.userId).select('fcmTokens').lean();
+    if (user?.fcmTokens?.length) {
+      resolved.fcmTokens = user.fcmTokens;
+      resolved.userTokensId = resolved.userId;
+    }
+  }
+
   return resolved;
 }
 export async function trigger(triggerKey: string, context: TriggerContext): Promise<void> {
@@ -99,6 +114,7 @@ export async function trigger(triggerKey: string, context: TriggerContext): Prom
     const contact = await resolveContact(context.recipient);
 
     for (const template of templates) {
+      if (context.channels && !context.channels.includes(template.channel)) continue;
       await deliverOne(template.channel, template._id.toString(), triggerKey, contact, template, context.variables);
     }
   } catch (err) {
@@ -196,6 +212,8 @@ async function deliverOne(
               await CustomerModel.updateOne({ _id: contact.customerId }, { $pull: { fcmTokens: { $in: result.invalidTokens } } });
             } else if (contact.employeeId) {
               await EmployeeModel.updateOne({ _id: contact.employeeId }, { $pull: { fcmTokens: { $in: result.invalidTokens } } });
+            } else if (contact.userTokensId) {
+              await UserModel.updateOne({ _id: contact.userTokensId }, { $pull: { fcmTokens: { $in: result.invalidTokens } } });
             }
           }
           if (result.successCount > 0) {

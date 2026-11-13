@@ -12,6 +12,7 @@ import { logActivity } from '../../lib/auditLog';
 import { AccessTokenPayload } from '../../lib/jwt';
 import { DataScope } from '../users/users.types';
 import { isCustomerRole, resolveOwnCustomerId } from '../../lib/ownCustomerScope';
+import { restrictToOwnJobs } from '../../lib/ownFieldScope';
 
 export async function convertProformaToInvoice(proformaId: string, actor: AccessTokenPayload) {
   const proforma = await proformaService.assertConvertible(proformaId);
@@ -114,6 +115,8 @@ export async function listInvoices(
     const ownId = await resolveOwnCustomerId(user.sub);
     filter.customerId = ownId ?? null;
   }
+  // Field technicians (OWN scope): only invoices on jobs assigned to them.
+  await restrictToOwnJobs(filter, scope, user, params.serviceRequestId);
 
   const skip = (params.page - 1) * params.limit;
   const [items, total] = await Promise.all([

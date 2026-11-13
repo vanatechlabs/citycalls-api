@@ -14,6 +14,7 @@ import { DataScope } from '../users/users.types';
 import { isCustomerRole, resolveOwnCustomerId } from '../../lib/ownCustomerScope';
 import { updateStatus as updateServiceRequestStatus } from '../service-requests/serviceRequests.service';
 import { ServiceRequestStatus } from '../service-requests/serviceRequests.model';
+import { restrictToOwnJobs } from '../../lib/ownFieldScope';
 async function syncServiceRequestStatus(
   serviceRequestId: unknown,
   toStatus: ServiceRequestStatus,
@@ -106,6 +107,8 @@ export async function listEstimates(
     const ownId = await resolveOwnCustomerId(user.sub);
     filter.customerId = ownId ?? null;
   }
+  // Field technicians (OWN scope): only estimates on jobs assigned to them.
+  await restrictToOwnJobs(filter, scope, user, params.serviceRequestId);
 
   const skip = (params.page - 1) * params.limit;
   const [items, total] = await Promise.all([

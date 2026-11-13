@@ -37,8 +37,15 @@ export async function markRead(id: string, userId: string) {
   return notification;
 }
 
-export async function getUnreadCount(userId: string) {
-  return NotificationModel.countDocuments({ recipientUserId: userId, readAt: { $exists: false } });
+// Without [channel] every per-channel copy of an event is counted (and
+// SMS/WhatsApp copies are never marked read), so callers showing an in-app
+// list should pass channel=IN_APP.
+export async function getUnreadCount(userId: string, channel?: string) {
+  return NotificationModel.countDocuments({
+    recipientUserId: userId,
+    readAt: { $exists: false },
+    ...(channel ? { channel } : {}),
+  });
 }
 
 // Admin template management — docs/11-complete-api-contracts.md §2 "Notifications" row.

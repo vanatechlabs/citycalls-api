@@ -1,4 +1,4 @@
-import { hasAnyMenu, menusForApiPath } from './menuAccess.middleware';
+import { hasAnyMenu, isExemptFromMenuAccess, menusForApiPath } from './menuAccess.middleware';
 
 describe('Menu access API guard', () => {
   it('maps admin APIs to the menus that own them', () => {
@@ -18,5 +18,14 @@ describe('Menu access API guard', () => {
     expect(hasAnyMenu(allowed, ['Service Call Section::*'])).toBe(true);
     expect(hasAnyMenu(allowed, ['Website Section::Hero Carousel'])).toBe(false);
     expect(hasAnyMenu([], ['Calls::*'])).toBe(false);
+  });
+
+  it('never blocks field technicians, who only use the mobile app', () => {
+    for (const role of ['EMPLOYEE', 'TECHNICIAN', 'VENDOR_TECHNICIAN', 'SUPER_ADMIN']) {
+      expect(isExemptFromMenuAccess(role)).toBe(true);
+    }
+    for (const role of ['ADMIN', 'BRANCH_MANAGER', 'CALL_EXECUTIVE', 'VENDOR_OWNER']) {
+      expect(isExemptFromMenuAccess(role)).toBe(false);
+    }
   });
 });
