@@ -33,6 +33,7 @@ import { UnauthorizedError } from '../../lib/errors';
 import { resolveVerticalServiceIds } from '../../lib/verticals';
 import { assertSlotAvailable } from '../appointment-slots/appointmentSlots.service';
 import { env } from '../../config/env';
+import { isWhatsAppEnabled } from '../../lib/whatsappAdapter';
 
 const ASSIGNEE_TYPE_TO_STATUS: Record<AssigneeType, ServiceRequestStatus> = {
   BRANCH: 'ASSIGNED_TO_BRANCH',
@@ -344,7 +345,7 @@ export async function createServiceRequest(data: Record<string, unknown> & { add
 
   await trigger('SERVICE_REQUEST_CREATED', {
     recipient: { customerId: data.customerId as string },
-    variables: { serviceRequestId: sr._id.toString(), number },
+    variables: { serviceRequestId: sr._id.toString(), number, serviceName: service.name, symptoms: sr.symptoms, notes: sr.notes, scheduledDate: sr.scheduledDate?.toISOString(), scheduledSlot: sr.scheduledSlot },
   });
 
   return sr;
@@ -431,7 +432,7 @@ export async function updateStatus(id: string, toStatus: ServiceRequestStatus, a
   emitServiceRequestStatusChanged(id, { serviceRequestId: id, fromStatus, toStatus });
   await trigger(`SERVICE_REQUEST_${toStatus}`, {
     recipient: { customerId: sr.customerId.toString() },
-    variables: { serviceRequestId: id, status: toStatus },
+    variables: { serviceRequestId: id, number: sr.number, status: toStatus },
   });
 
   return sr;
@@ -941,10 +942,16 @@ export async function requestCompletionOtp(serviceRequestId: string): Promise<vo
   const mobile = customer?.contacts.find((c) => c.isPrimary)?.mobile ?? customer?.contacts[0]?.mobile;
   if (!mobile) throw new ConflictError('Customer has no registered mobile number for completion confirmation', 'NO_CUSTOMER_MOBILE');
 
+  if (env.nodeEnv === 'production' && (!isWhatsAppEnabled() || !env.aisensy.completionOtpCampaign)) {
+    throw new AppError(503, 'Completion WhatsApp delivery is not configured. Please contact the office.');
+  }
+  const recentOtp = await OtpModel.findOne({ mobile, purpose: 'COMPLETION', serviceRequestId, createdAt: { $gt: new Date(Date.now() - 60000) } });
+  if (recentOtp) throw new AppError(429, 'Please wait a minute before requesting another completion OTP.');
+
   // Fixed only in development so field testing does not depend on a delivery
   // provider. Production continues to use a cryptographically random OTP.
   const otp = env.nodeEnv === 'production' ? generateOtp() : '123456';
-  await OtpModel.create({
+  const otpRecord = await OtpModel.create({
     mobile,
     purpose: 'COMPLETION',
     serviceRequestId,
@@ -955,7 +962,12 @@ export async function requestCompletionOtp(serviceRequestId: string): Promise<vo
     console.log(`[dev] Completion OTP for job ${serviceRequestId} (${mobile}): ${otp}`);
   }
 
-  await trigger('SERVICE_COMPLETION_OTP', { recipient: { mobile }, variables: { serviceRequestId, otp } });
+  try {
+    await trigger('SERVICE_COMPLETION_OTP', { recipient: { customerId: sr.customerId.toString(), mobile }, variables: { serviceRequestId, number: sr.number, otp } }, { requireWhatsApp: env.nodeEnv === 'production' });
+  } catch {
+    await OtpModel.deleteOne({ _id: otpRecord._id });
+    throw new AppError(503, 'Completion OTP could not be sent. Please try again.');
+  }
 }
 
 export async function verifyCompletionOtp(serviceRequestId: string, otp: string): Promise<{ verified: true }> {

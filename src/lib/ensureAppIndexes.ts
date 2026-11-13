@@ -4,9 +4,10 @@ import { PaymentReceiptModel } from '../modules/finance/paymentReceipts.model';
 import { VendorInvoiceModel, VendorPayoutModel } from '../modules/vendors/vendorFinance.model';
 import { GatewayPaymentModel } from '../modules/finance/gatewayPayment.model';
 import { EstimateSyncModel } from '../modules/finance/estimateSync';
+import { NotificationTemplateModel } from '../modules/notifications/notificationTemplates.model';
 
 export async function ensureAppIndexes() {
-  for (const model of [InvoiceModel, ProformaInvoiceModel, PaymentReceiptModel, VendorInvoiceModel, VendorPayoutModel, GatewayPaymentModel, EstimateSyncModel]) {
+  for (const model of [InvoiceModel, ProformaInvoiceModel, PaymentReceiptModel, VendorInvoiceModel, VendorPayoutModel, GatewayPaymentModel, EstimateSyncModel, NotificationTemplateModel]) {
     try { await model.createIndexes(); }
     catch { throw new Error(`Cannot establish integrity indexes for ${model.modelName}. Review duplicates with scripts/checkAppRelease.ts before starting the API.`); }
   }

@@ -1,5 +1,6 @@
 import { NumberingSeriesModel, DocumentType } from '../modules/config/numberingSeries.model';
 import { BranchModel } from '../modules/organization/organization.model';
+import { nextRegistrationNo } from '../modules/registrations/registrationNumber';
 
 // Default numbering prefixes per docs/coordination/06-naming-conventions.md §3.
 const DEFAULT_PREFIX: Record<DocumentType, string> = {
@@ -50,6 +51,9 @@ async function resolveBranchCode(branchId?: string): Promise<string | undefined>
 
 // Atomically increments and returns the next formatted document number.
 export async function getNextNumber(documentType: DocumentType, branchId?: string): Promise<string> {
+  // App/admin service bookings share the existing registration settings and
+  // atomic counter with website bookings. Existing stored numbers stay intact.
+  if (documentType === 'SERVICE_REQUEST') return nextRegistrationNo();
   const isScoped = BRANCH_AND_FY_SCOPED.includes(documentType);
   const financialYear = isScoped ? currentFinancialYear() : undefined;
 

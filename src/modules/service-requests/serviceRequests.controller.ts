@@ -252,6 +252,9 @@ export async function assignmentCandidatesHandler(req: ScopedRequest, res: Respo
 
 export async function requestCompletionOtpHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
+    if (!req.user || !req.scope) throw new UnauthorizedError();
+    const sr = await srService.getServiceRequest(paramAsString(req.params.id));
+    await srService.assertOwnServiceRequestAccess(sr, req.scope, req.user);
     await srService.requestCompletionOtp(paramAsString(req.params.id));
     sendSuccess(res, null, 'Completion OTP sent successfully');
   } catch (err) {
@@ -261,6 +264,9 @@ export async function requestCompletionOtpHandler(req: ScopedRequest, res: Respo
 
 export async function verifyCompletionOtpHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
+    if (!req.user || !req.scope) throw new UnauthorizedError();
+    const sr = await srService.getServiceRequest(paramAsString(req.params.id));
+    await srService.assertOwnServiceRequestAccess(sr, req.scope, req.user);
     const { otp } = req.body as { otp: string };
     const result = await srService.verifyCompletionOtp(paramAsString(req.params.id), otp);
     sendSuccess(res, result, 'Completion OTP verified successfully');

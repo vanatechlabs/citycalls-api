@@ -203,7 +203,7 @@ export async function processSyncBatch(serviceRequestId: string, actions: SyncAc
         emitServiceRequestStatusChanged(serviceRequestId, { serviceRequestId, fromStatus: fromStatus!, toStatus });
         await logActivity({ entityType: 'SERVICE_REQUEST', entityId: serviceRequestId, user: actor, action: 'STATUS_CHANGED', module: 'service-requests', oldValue: { status: fromStatus }, newValue: { status: toStatus } }).catch(error => console.error('[sync] status audit failed', error));
         const job = await ServiceRequestModel.findById(serviceRequestId);
-        if (job) await trigger(`SERVICE_REQUEST_${toStatus}`, { recipient: { customerId: job.customerId.toString() }, variables: { serviceRequestId, status: toStatus } }).catch(error => console.error('[sync] status notification failed', error));
+        if (job) await trigger(`SERVICE_REQUEST_${toStatus}`, { recipient: { customerId: job.customerId.toString() }, variables: { serviceRequestId, number: job.number, status: toStatus } }).catch(error => console.error('[sync] status notification failed', error));
       }
     } catch (err) {
       if (!(err instanceof AppError) && !(err instanceof ZodError)) throw err;

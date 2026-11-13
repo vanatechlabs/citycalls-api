@@ -6,6 +6,9 @@ import { isEmailEnabled, sendEmail } from './emailAdapter';
 import { campaignNameForTrigger, isOtpTrigger, otpCopyCodeButton, isWhatsAppEnabled, sendWhatsApp } from './whatsappAdapter';
 import { isPushEnabled, sendPush } from './pushAdapter';
 import { emitNotificationNew } from '../realtime';
+import { env } from '../config/env';
+import { serviceBookingWhatsAppParams } from '../modules/registrations/registrations.service';
+import { serviceNotificationDefaults } from './serviceNotificationDefaults';
 
 export interface TriggerRecipient {
   userId?: string;
@@ -91,18 +94,30 @@ async function resolveContact(recipient: TriggerRecipient): Promise<ResolvedCont
 
   return resolved;
 }
-export async function trigger(triggerKey: string, context: TriggerContext): Promise<void> {
+export async function trigger(triggerKey: string, context: TriggerContext, options?: { requireWhatsApp?: boolean }): Promise<void> {
   try {
+    for (const defaults of serviceNotificationDefaults[triggerKey] ?? []) {
+      try {
+        await NotificationTemplateModel.updateOne({ triggerKey, channel: defaults.channel }, {
+          $setOnInsert: { ...defaults, triggerKey, active: true },
+        }, { upsert: true });
+      } catch (error) {
+        if ((error as { code?: number }).code !== 11000) throw error;
+      }
+    }
     const templates = await NotificationTemplateModel.find({ triggerKey, active: true });
+    if (options?.requireWhatsApp && !templates.some(template => template.channel === 'WHATSAPP')) throw new Error('Completion WhatsApp template is inactive or missing');
     if (templates.length === 0) return; // no template registered for this trigger yet — not an error, just nothing configured
 
     const contact = await resolveContact(context.recipient);
 
     for (const template of templates) {
-      await deliverOne(template.channel, template._id.toString(), triggerKey, contact, template, context.variables);
+      const status = await deliverOne(template.channel, template._id.toString(), triggerKey, contact, template, context.variables);
+      if (options?.requireWhatsApp && template.channel === 'WHATSAPP' && status !== 'SENT') throw new Error('Completion OTP could not be delivered through WhatsApp');
     }
   } catch (err) {
     console.error(`[notifications] trigger('${triggerKey}') failed unexpectedly`, err);
+    if (options?.requireWhatsApp) throw err;
   }
 }
 
@@ -113,7 +128,7 @@ async function deliverOne(
   contact: ResolvedContact,
   template: { bodyTemplate: string; subjectTemplate?: string; variables?: string[] },
   variables: Record<string, unknown>
-): Promise<void> {
+): Promise<string> {
   const body = renderTemplate(template.bodyTemplate, variables);
   const subject = template.subjectTemplate ? renderTemplate(template.subjectTemplate, variables) : undefined;
 
@@ -125,7 +140,8 @@ async function deliverOne(
     recipientMobile: contact.mobile,
     recipientEmail: contact.email,
     subject,
-    body,
+    // Never persist an authentication/completion secret in notification history.
+    body: isOtpTrigger(triggerKey) ? renderTemplate(template.bodyTemplate, { ...variables, otp: '[hidden]' }) : body,
     status: 'PENDING',
   });
 
@@ -168,7 +184,15 @@ async function deliverOne(
           }
           const otpFlow = isOtpTrigger(triggerKey);
           const otpValue = String(variables.otp ?? '');
-          const templateParams = otpFlow
+          const bookingFlow = triggerKey === 'SERVICE_REQUEST_CREATED';
+          const templateParams = bookingFlow ? serviceBookingWhatsAppParams({
+            fullName: contact.name || 'Customer', serviceName: String(variables.serviceName ?? 'Service'),
+            issues: Array.isArray(variables.symptoms) ? variables.symptoms.map(String) : [],
+            issueDescription: String(variables.notes ?? ''),
+            preferredDate: variables.scheduledDate ? new Date(String(variables.scheduledDate)) : undefined,
+            timeSlot: variables.scheduledSlot ? String(variables.scheduledSlot) : undefined,
+            registrationNo: String(variables.number ?? ''),
+          }) : otpFlow
             ? [otpValue]
             : (template.variables ?? []).map((key) => String(variables[key] ?? ''));
           await sendWhatsApp({
@@ -177,6 +201,7 @@ async function deliverOne(
             userName: contact.name,
             variables: templateParams,
             buttons: otpFlow ? otpCopyCodeButton(otpValue) : undefined,
+            ...(bookingFlow ? { source: 'app-service-booking', media: { url: env.aisensy.serviceBookingMediaUrl, filename: 'citycalls.jpg' } } : {}),
           });
           notification.status = 'SENT';
           notification.sentAt = new Date();
@@ -218,4 +243,5 @@ async function deliverOne(
   }
 
   await notification.save();
+  return notification.status;
 }

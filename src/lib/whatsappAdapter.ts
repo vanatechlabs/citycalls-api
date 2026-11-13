@@ -40,6 +40,7 @@ export function normalizeWhatsAppDestination(mobile: string): string {
 }
 
 export function campaignNameForTrigger(triggerKey: string): string | undefined {
+  if (triggerKey === 'SERVICE_REQUEST_CREATED') return env.aisensy.serviceBookingCampaign;
   if (triggerKey === 'OTP_LOGIN') return env.aisensy.loginOtpCampaign;
   if (triggerKey === 'SERVICE_COMPLETION_OTP') return env.aisensy.completionOtpCampaign;
   return undefined;
