@@ -15,9 +15,13 @@ import { upgradeRegistrationLifecycle } from './modules/registrations/registrati
 import { renameMenuAccessKeys } from './modules/users/menuAccessRename.migration';
 import { mergeSofaCleaningIntoHomeCleaning } from './modules/websites/city-calls/navbar/sofaCleaningMerge.migration';
 import { backfillCustomerProfiles } from './modules/customer-profiles/customerProfile.backfill';
+import { cancelDuplicateActiveInvoices } from './modules/finance/duplicateInvoices.repair';
 
 async function main(): Promise<void> {
   await connectDb();
+  // Clears old duplicate invoices first, so the one-invoice-per-job index can
+  // be built. A failure here is logged, never fatal — same as the indexes.
+  await cancelDuplicateActiveInvoices().catch((error) => console.error('[invoices] duplicate repair failed', error));
   await ensureAppIndexes();
   await upgradeRegistrationLifecycle();
   await renameMenuAccessKeys();
