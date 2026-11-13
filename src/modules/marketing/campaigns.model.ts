@@ -7,7 +7,10 @@ export type CampaignRecipientType = (typeof CAMPAIGN_RECIPIENT_TYPES)[number];
 export interface ICampaign extends Document {
   name: string;
   channel: 'WHATSAPP' | 'EMAIL';
-  templateId: Types.ObjectId;
+  templateId?: Types.ObjectId;
+  contentType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'DOCUMENT' | 'CAROUSEL';
+  lastError?: string;
+  nextQueueAttemptAt?: Date;
   providerCampaignName?: string;
   templateParams: string[];
   media?: { fileId?: Types.ObjectId; url: string; filename: string };
@@ -35,7 +38,10 @@ const campaignSchema = new Schema<ICampaign>(
   {
     name: { type: String, required: true, trim: true },
     channel: { type: String, enum: ['WHATSAPP', 'EMAIL'], required: true },
-    templateId: { type: Schema.Types.ObjectId, ref: 'NotificationTemplate', required: true },
+    templateId: { type: Schema.Types.ObjectId, ref: 'NotificationTemplate' },
+    contentType: { type: String, enum: ['TEXT', 'IMAGE', 'VIDEO', 'DOCUMENT', 'CAROUSEL'] },
+    lastError: String,
+    nextQueueAttemptAt: Date,
     providerCampaignName: { type: String, trim: true },
     templateParams: { type: [String], default: [] },
     media: {
@@ -72,5 +78,6 @@ const campaignSchema = new Schema<ICampaign>(
 );
 
 campaignSchema.index({ status: 1 });
+campaignSchema.index({ status: 1, scheduledAt: 1 });
 
 export const CampaignModel = model<ICampaign>('Campaign', campaignSchema);

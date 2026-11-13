@@ -31,7 +31,7 @@ const CATEGORY_RULES: Record<FileCategory, CategoryRule> = {
   SIGNATURE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 2 * 1024 * 1024 },
   PROFILE_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 5 * 1024 * 1024 },
   CATALOG_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
-  MARKETING_MEDIA: { allowedMimeTypes: [...IMAGE_TYPES, ...VIDEO_TYPES], maxSizeBytes: 20 * 1024 * 1024 },
+  MARKETING_MEDIA: { allowedMimeTypes: [...IMAGE_TYPES, ...VIDEO_TYPES, 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'text/plain'], maxSizeBytes: 20 * 1024 * 1024 },
   WEBSITE_HERO_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
   WEBSITE_SPOTLIGHT_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },
   WEBSITE_FEATURES_IMAGE: { allowedMimeTypes: IMAGE_TYPES, maxSizeBytes: 10 * 1024 * 1024 },

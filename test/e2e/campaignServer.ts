@@ -1,0 +1,54 @@
+// Test-only local server. Disposable database; AiSensy is intercepted below.
+import mongoose, { Types } from 'mongoose';
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
+import express from 'express';
+import cors from 'cors';
+import campaignRoutes from '../../src/modules/marketing/campaigns.routes';
+import { errorHandler } from '../../src/middleware/error.middleware';
+import { env } from '../../src/config/env';
+import { signAccessToken } from '../../src/lib/jwt';
+import { RolePermissionModel } from '../../src/modules/config/rolePermissions.model';
+import { loadPermissionCache } from '../../src/lib/permissionCache';
+import { CampaignModel } from '../../src/modules/marketing/campaigns.model';
+import { CampaignRecipientModel } from '../../src/modules/marketing/campaignRecipients.model';
+import { NotificationTemplateModel } from '../../src/modules/notifications/notificationTemplates.model';
+import { runCampaignSchedulerOnce } from '../../src/jobs/campaignScheduler';
+import { assertFileAllowed } from '../../src/lib/fileStorage';
+async function main() {
+  env.jwtAccessSecret = 'disposable-local-campaign-e2e-secret';
+  env.aisensy.enabled = true; env.aisensy.apiKey = 'fake-local-test-key';
+  const providerCalls: unknown[] = [];
+  global.fetch = (async (url: unknown, options: { body?: string }) => {
+    if (url !== 'https://backend.aisensy.com/campaign/t1/api/v2') throw new Error('Unexpected external request in campaign test');
+    providerCalls.push(JSON.parse(options.body ?? '{}'));
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+  }) as typeof fetch;
+  const db = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
+  await mongoose.connect(db.getUri());
+  await Promise.all([CampaignModel.init(), CampaignRecipientModel.init(), NotificationTemplateModel.init()]);
+  await RolePermissionModel.create(['view', 'edit', 'create'].map(action => ({ role: 'SUPER_ADMIN', module: 'marketing', action, dataScope: 'ALL' })));
+  await loadPermissionCache();
+  const user = { _id: new Types.ObjectId().toString(), name: 'Local Campaign Test', mobile: '9000000000', role: 'SUPER_ADMIN', status: 'ACTIVE', permissions: { marketing: { view: 'ALL', edit: 'ALL', create: 'ALL' } } };
+  const freshToken = () => signAccessToken({ sub: user._id, role: 'SUPER_ADMIN' });
+  const app = express(); app.use(cors({ origin: 'http://127.0.0.1:3101' }), express.json({ limit: '2mb' }));
+  const envelope = (data: unknown) => ({ success: true, message: 'Local test', data, errors: null, meta: null });
+  app.get('/health', (_req, res) => res.json({ ready: true }));
+  app.get('/test/session', (_req, res) => res.json({ token: freshToken() }));
+  app.post('/test/reset', async (_req, res) => { await CampaignModel.deleteMany({}); await CampaignRecipientModel.deleteMany({}); providerCalls.length = 0; res.json({ ready: true }); });
+  app.get('/test/provider-calls', (_req, res) => res.json(providerCalls));
+  app.post('/test/scheduler', async (req, res) => { if (req.body?.id) await CampaignModel.updateOne({ _id: req.body.id }, { $set: { scheduledAt: new Date(Date.now() - 60000) } }); await runCampaignSchedulerOnce(); res.json({ ready: true }); });
+  app.post('/api/v1/auth/refresh', (_req, res) => res.json(envelope({ accessToken: freshToken(), refreshToken: 'local-only' })));
+  app.get('/api/v1/auth/me', (_req, res) => res.json(envelope(user)));
+  app.get('/api/v1/notification-templates', (_req, res) => res.json(envelope([])));
+  app.get('/api/v1/registrations/unread', (_req, res) => res.json(envelope({ total: 0, byCategory: {}, newTotal: 0, newByCategory: {}, latest: [] })));
+  app.get('/api/v1/notifications/unread-count', (_req, res) => res.json(envelope({ count: 0 })));
+  app.post('/api/v1/files/signed-upload', (_req, res) => res.json(envelope({ mode: 'CLOUDINARY', timestamp: 1, signature: 'fixture', apiKey: 'fixture', cloudName: 'fixture', folder: 'campaign-test' })));
+  app.post('/api/v1/files/confirm', (req, res, next) => { try { assertFileAllowed(req.body.category, req.body.mimeType, req.body.sizeBytes); res.json(envelope({ ...req.body, _id: new Types.ObjectId().toString(), provider: 'CLOUDINARY' })); } catch (error) { next(error); } });
+  app.use('/api/v1', campaignRoutes);
+  app.get('/api/v1/{*path}', (_req, res) => res.json(envelope([])));
+  app.use(errorHandler);
+  const server = app.listen(4201, '127.0.0.1', () => console.log('CAMPAIGN_E2E_READY http://127.0.0.1:4201'));
+  const shutdown = () => { server.close(); void mongoose.disconnect().then(() => db.stop()).then(() => process.exit(0)); };
+  process.once('SIGINT', shutdown); process.once('SIGTERM', shutdown);
+}
+void main().catch(error => { console.error(error); process.exit(1); });

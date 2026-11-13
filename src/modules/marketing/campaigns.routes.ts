@@ -15,5 +15,7 @@ router.delete('/campaigns/:id', authMiddleware, requirePermission('marketing', '
 router.post('/campaigns/:id/send', authMiddleware, requirePermission('marketing', 'edit'), ctrl.sendCampaignHandler);
 router.post('/campaigns/:id/duplicate', authMiddleware, requirePermission('marketing', 'create'), ctrl.duplicateCampaignHandler);
 router.get('/campaigns/:id/audience-preview', authMiddleware, requirePermission('marketing', 'view'), ctrl.previewCampaignAudienceHandler);
+router.get('/campaigns/:id/recipients', authMiddleware, requirePermission('marketing', 'view'), validate(listCampaignsQuerySchema, 'query'), ctrl.listCampaignRecipientsHandler);
+router.post('/campaigns/:id/cancel', authMiddleware, requirePermission('marketing', 'edit'), ctrl.cancelCampaignHandler);
 
 export default router;

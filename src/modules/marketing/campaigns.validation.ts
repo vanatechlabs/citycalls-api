@@ -11,7 +11,7 @@ const audienceFilterSchema = z.object({
   branchIds: z.array(z.string()).default([]),
   vendorIds: z.array(z.string()).default([]),
   excludeMobiles: z.array(z.string()).default([]),
-  manualMobiles: z.array(z.string()).max(1000).default([]),
+  manualMobiles: z.array(z.string().trim().max(40)).max(50000, 'Use at most 50,000 numbers per campaign').default([]),
 });
 
 const mediaSchema = z.object({
@@ -36,9 +36,10 @@ export const createCampaignSchema = z.object({
   campaignPreset: z.enum(['FESTIVAL', 'INDEPENDENCE_DAY']).optional(),
   templateParams: z.array(z.string()).default([]),
   media: mediaSchema.optional(),
+  contentType: z.enum(['TEXT', 'IMAGE', 'VIDEO', 'DOCUMENT', 'CAROUSEL']).optional(),
   carouselCards: z.array(carouselCardSchema).max(10).optional(),
   audienceFilter: audienceFilterSchema.default({ recipientTypes: ['CUSTOMER'], tags: [], segments: [], roles: [], branchIds: [], vendorIds: [], excludeMobiles: [], manualMobiles: [] }),
-  scheduledAt: z.coerce.date().optional(),
+  scheduledAt: z.coerce.date().nullable().optional(),
 });
 
 export const updateCampaignSchema = z.object({
@@ -47,10 +48,11 @@ export const updateCampaignSchema = z.object({
   templateId: z.string().optional(),
   providerCampaignName: z.string().trim().optional(),
   templateParams: z.array(z.string()).optional(),
-  media: mediaSchema.optional(),
+  media: mediaSchema.nullable().optional(),
+  contentType: z.enum(['TEXT', 'IMAGE', 'VIDEO', 'DOCUMENT', 'CAROUSEL']).optional(),
   carouselCards: z.array(carouselCardSchema).max(10).optional(),
   audienceFilter: audienceFilterSchema.optional(),
-  scheduledAt: z.coerce.date().optional(),
+  scheduledAt: z.coerce.date().nullable().optional(),
 });
 
 export const listCampaignsQuerySchema = z.object({

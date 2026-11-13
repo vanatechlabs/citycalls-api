@@ -76,7 +76,6 @@ export async function sendWhatsApp(input: SendWhatsAppInput): Promise<AiSensySen
           card_index: card.cardIndex,
           components: [
             { type: 'HEADER', parameters: [{ type: 'image', image: { link: card.imageUrl } }] },
-            { type: 'BODY', parameters: [] },
           ],
         })),
       } : {}),

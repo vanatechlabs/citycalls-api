@@ -36,10 +36,22 @@ export async function sendCampaignHandler(req: ScopedRequest, res: Response, nex
   try {
     if (!req.user) throw new UnauthorizedError();
     const campaign = await campaignsService.sendCampaignNow(paramAsString(req.params.id), req.user);
-    sendSuccess(res, campaign, 'Campaign sent successfully');
+    sendSuccess(res, campaign, 'Campaign queued for background delivery');
   } catch (err) {
     next(err);
   }
+}
+
+export async function cancelCampaignHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try { sendSuccess(res, await campaignsService.cancelCampaign(paramAsString(req.params.id)), 'Campaign cancelled; messages already in flight may still arrive'); }
+  catch (error) { next(error); }
+}
+export async function listCampaignRecipientsHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    const { page, limit } = req.query as unknown as { page: number; limit: number };
+    const { items, meta } = await campaignsService.listCampaignRecipients(paramAsString(req.params.id), page, limit);
+    sendSuccess(res, items, 'Campaign recipients fetched', meta);
+  } catch (error) { next(error); }
 }
 
 export async function previewCampaignAudienceHandler(req: ScopedRequest, res: Response, next: NextFunction) {

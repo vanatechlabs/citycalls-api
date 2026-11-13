@@ -175,7 +175,12 @@ export async function resolveCampaignAudience(campaign: CampaignAudienceInput): 
 
   const excluded = new Set((campaign.audienceFilter.excludeMobiles ?? []).map(normalizeForDedupe).filter(Boolean));
   const seen = new Set<string>();
-  for (const candidate of candidates) {
+  // An ineligible duplicate must not suppress another consented record.
+  for (const candidate of [...candidates].sort((a, b) => Number(b.eligible) - Number(a.eligible))) {
+    if (whatsapp && candidate.mobile) {
+      try { candidate.mobile = normalizeWhatsAppDestination(candidate.mobile); }
+      catch { candidate.eligible = false; candidate.exclusionReason = 'NO_CONTACT'; }
+    }
     const contact = normalizeForDedupe(whatsapp ? candidate.mobile : candidate.email);
     if (contact && excluded.has(contact)) {
       candidate.eligible = false;
@@ -183,7 +188,7 @@ export async function resolveCampaignAudience(campaign: CampaignAudienceInput): 
     } else if (contact && seen.has(contact)) {
       candidate.eligible = false;
       candidate.exclusionReason = 'DUPLICATE';
-    } else if (contact) {
+    } else if (contact && candidate.eligible) {
       seen.add(contact);
     }
   }

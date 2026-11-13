@@ -7,7 +7,7 @@ export async function runCampaignSchedulerOnce(): Promise<void> {
   running = true;
   try {
     await queueDueScheduledCampaigns();
-    await processQueuedCampaignRecipients(25);
+    await processQueuedCampaignRecipients(100);
   } catch (error) {
     console.error('[campaign-scheduler] cycle failed', error);
   } finally {
