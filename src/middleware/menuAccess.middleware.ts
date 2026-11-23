@@ -45,7 +45,7 @@ const API_MENUS: { prefix: string; keys: string[] }[] = [
   { prefix: '/websites/city-calls/seo', keys: ['SEO Section::SEO Manager'] },
   { prefix: '/websites/city-calls/social-links', keys: ['SEO Section::Social Media'] },
   { prefix: '/websites/city-calls/navbar', keys: ['Admin Section::Navbar List'] },
-  { prefix: '/registrations', keys: ['Service Call Section::*'] },
+  { prefix: '/registrations', keys: ['Service Call Section::*', 'Help Now Call Section::*'] },
   { prefix: '/call-enquiries', keys: ['Call Enquiry Section::*'] },
   { prefix: '/customer-profiles', keys: ['Customer Section::*'] },
   { prefix: '/enquiries', keys: ['Enquiry Section::*'] },

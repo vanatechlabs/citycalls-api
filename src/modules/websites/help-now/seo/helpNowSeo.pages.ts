@@ -11,9 +11,10 @@ export const helpNowSeoKey = (sitePath: string) => (sitePath === '/' ? HELP_NOW_
 export const isHelpNowSeoKey = (pagePath: string) =>
   pagePath === HELP_NOW_SEO_PREFIX || pagePath.startsWith(`${HELP_NOW_SEO_PREFIX}/`);
 
-// Every Help Now website page SEO can be written for: the home page and each service page.
+// Every Help Now website page SEO can be written for: home, contact and each service page.
 export const HELP_NOW_SEO_PAGES = [
   { path: helpNowSeoKey('/'), name: 'Help Now — Home' },
+  { path: helpNowSeoKey('/contact'), name: 'Help Now — Contact Us' },
   ...HELP_NOW_SERVICE_SLUGS.map((slug) => ({
     path: helpNowSeoKey(`/services/${slug}`),
     name: `Help Now — ${HELP_NOW_SERVICES[slug].name}`,

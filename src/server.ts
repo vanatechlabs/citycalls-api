@@ -16,6 +16,7 @@ import { renameMenuAccessKeys } from './modules/users/menuAccessRename.migration
 import { mergeSofaCleaningIntoHomeCleaning } from './modules/websites/city-calls/navbar/sofaCleaningMerge.migration';
 import { backfillCustomerProfiles } from './modules/customer-profiles/customerProfile.backfill';
 import { cancelDuplicateActiveInvoices } from './modules/finance/duplicateInvoices.repair';
+import { ensureBootstrapAdmin } from './modules/users/bootstrapAdmin';
 
 async function main(): Promise<void> {
   await connectDb();
@@ -26,6 +27,7 @@ async function main(): Promise<void> {
   await upgradeRegistrationLifecycle();
   await renameMenuAccessKeys();
   await mergeSofaCleaningIntoHomeCleaning();
+  await ensureBootstrapAdmin();
   const permissionCount = await loadPermissionCache();
   const transitionCount = await loadStatusEngineCache();
 

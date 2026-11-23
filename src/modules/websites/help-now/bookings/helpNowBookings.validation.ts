@@ -66,6 +66,11 @@ export const verifyHelpNowPaymentSchema = z.object({
   razorpaySignature: z.string().trim().regex(/^[a-f0-9]{64}$/, 'Invalid signature'),
 }).strict();
 
+export const helpNowPaymentFailedSchema = z.object({
+  razorpayOrderId: z.string().trim().regex(/^order_[A-Za-z0-9]{6,40}$/, 'Invalid order'),
+  reason: z.string().trim().max(300).optional(),
+}).strict();
+
 export const requestHelpNowOtpSchema = z.object({ phone: phoneSchema }).strict();
 
 export const verifyHelpNowOtpSchema = z.object({

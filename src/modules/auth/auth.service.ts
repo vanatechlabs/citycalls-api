@@ -87,19 +87,25 @@ async function issueTokens(user: IUser, meta: SessionMeta, expiresAt: Date = ref
   };
 }
 
+// What a sign-in identifier looks up: an email (has "@"), a mobile number
+// (digits) or otherwise a username.
+export function loginLookup(identifier: string): { email: string } | { mobile: string } | { username: string } {
+  const value = identifier.trim();
+  if (value.includes('@')) return { email: value.toLowerCase() };
+  if (/^\d+$/.test(value)) return { mobile: value };
+  return { username: value.toLowerCase() };
+}
+
 export async function login(identifier: string, password: string, meta: SessionMeta): Promise<AuthResult> {
-  const isEmail = identifier.includes('@');
-  const user = await UserModel.findOne(
-    isEmail ? { email: identifier.toLowerCase() } : { mobile: identifier }
-  ).select('+passwordHash');
+  const user = await UserModel.findOne(loginLookup(identifier)).select('+passwordHash');
 
   if (!user || user.status !== 'ACTIVE') {
-    throw new UnauthorizedError('Incorrect email/mobile or password');
+    throw new UnauthorizedError('Incorrect username/email/mobile or password');
   }
 
   const passwordMatches = await bcrypt.compare(password, user.passwordHash);
   if (!passwordMatches) {
-    throw new UnauthorizedError('Incorrect email/mobile or password');
+    throw new UnauthorizedError('Incorrect username/email/mobile or password');
   }
 
   user.lastLoginAt = new Date();

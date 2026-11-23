@@ -49,6 +49,14 @@ export async function confirmHelpNowPaymentHandler(req: ScopedRequest, res: Resp
   }
 }
 
+export async function helpNowPaymentFailedHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    sendSuccess(res, await helpNowBookingsService.markHelpNowPaymentFailed(req.body), 'Payment failure recorded');
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function requestHelpNowOtpHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
     sendSuccess(res, await requestHelpNowOtp(req.body.phone), 'OTP sent on WhatsApp');

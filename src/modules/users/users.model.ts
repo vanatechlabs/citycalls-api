@@ -3,6 +3,8 @@ import { Role, USER_STATUSES, UserStatus } from './users.types';
 
 export interface IUser extends Document {
   name: string;
+  // Optional sign-in name (e.g. "vansh"), as an alternative to email/mobile.
+  username?: string;
   email?: string;
   mobile: string;
   passwordHash: string;
@@ -33,6 +35,7 @@ export interface IUser extends Document {
 const userSchema = new Schema<IUser>(
   {
     name: { type: String, required: true, trim: true },
+    username: { type: String, trim: true, lowercase: true },
     email: { type: String, trim: true, lowercase: true },
     mobile: { type: String, required: true, unique: true, trim: true },
     passwordHash: { type: String, required: true, select: false },
@@ -60,6 +63,8 @@ const userSchema = new Schema<IUser>(
 );
 
 userSchema.index({ role: 1 });
+// Sparse: most users have no username.
+userSchema.index({ username: 1 }, { unique: true, sparse: true });
 userSchema.index({ branchId: 1 });
 
 export const UserModel = model<IUser>('User', userSchema);

@@ -3,7 +3,7 @@ import { hasAnyMenu, menusForApiPath } from './menuAccess.middleware';
 describe('Menu access API guard', () => {
   it('maps admin APIs to the menus that own them', () => {
     expect(menusForApiPath('/websites/city-calls/home-page/hero-carousel/slides/abc')).toEqual(['Website Section::Hero Carousel']);
-    expect(menusForApiPath('/registrations/123/transition')).toEqual(['Service Call Section::*']);
+    expect(menusForApiPath('/registrations/123/transition')).toEqual(['Service Call Section::*', 'Help Now Call Section::*']);
     expect(menusForApiPath('/ai/settings')).toEqual(['Analytics & Intelligence::AI Settings']);
   });
 

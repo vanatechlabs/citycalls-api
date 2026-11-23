@@ -46,6 +46,30 @@ export type RegistrationSource = (typeof REGISTRATION_SOURCES)[number];
 
 export const ISSUE_FREQUENCIES = ['Always', 'Sometimes', 'Occasionally', 'Once'] as const;
 
+// Help Now bookings: how the customer pays and where that stands.
+//   ONLINE:        PENDING (checkout opened, not paid yet) → PAID, or FAILED
+//   AFTER_SERVICE: TO_COLLECT (the helper collects the amount)
+export const PAYMENT_MODES = ['ONLINE', 'AFTER_SERVICE'] as const;
+export const PAYMENT_STATUSES = ['PENDING', 'PAID', 'FAILED', 'TO_COLLECT'] as const;
+export type PaymentMode = (typeof PAYMENT_MODES)[number];
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
+export interface RegistrationPayment {
+  mode: PaymentMode;
+  status: PaymentStatus;
+  // Rupees: booking value, coupon discount, and what the customer pays.
+  subtotal: number;
+  discount: number;
+  amount: number;
+  couponCode?: string;
+  gateway?: 'RAZORPAY';
+  orderId?: string;
+  paymentId?: string;
+  paidAt?: Date;
+  failureReason?: string;
+  updatedAt?: Date;
+}
+
 export interface IRegistration extends Document {
   registrationNo: string;
   source: RegistrationSource;
@@ -98,6 +122,8 @@ export interface IRegistration extends Document {
   // Service-specific answers that have no dedicated field (e.g. "Outdoor
   // unit accessible?: Yes", "Approx. AC age: 1–3 years") — website bookings.
   extraDetails: { label: string; value: string }[];
+  // Help Now bookings only.
+  payment?: RegistrationPayment;
   // Unread until someone opens it in admin; drives the sidebar badges and
   // the new-registration popup. Admin-created ones start read.
   viewedAt?: Date;
@@ -185,6 +211,25 @@ const registrationSchema = new Schema<IRegistration>(
       type: [new Schema({ label: { type: String, trim: true, maxlength: 80 }, value: { type: String, trim: true, maxlength: 200 } }, { _id: false })],
       default: [],
     },
+    payment: {
+      type: new Schema(
+        {
+          mode: { type: String, enum: PAYMENT_MODES, required: true },
+          status: { type: String, enum: PAYMENT_STATUSES, required: true },
+          subtotal: { type: Number, min: 0 },
+          discount: { type: Number, min: 0, default: 0 },
+          amount: { type: Number, min: 0, required: true },
+          couponCode: { type: String, trim: true, uppercase: true, maxlength: 40 },
+          gateway: { type: String, enum: ['RAZORPAY'] },
+          orderId: { type: String, trim: true, maxlength: 80 },
+          paymentId: { type: String, trim: true, maxlength: 80 },
+          paidAt: { type: Date },
+          failureReason: { type: String, trim: true, maxlength: 300 },
+          updatedAt: { type: Date },
+        },
+        { _id: false }
+      ),
+    },
     viewedAt: { type: Date },
     viewedBy: { type: actorSchema },
     whatsapp: {
@@ -202,5 +247,6 @@ const registrationSchema = new Schema<IRegistration>(
 registrationSchema.index({ status: 1, createdAt: -1 });
 registrationSchema.index({ phone: 1 });
 registrationSchema.index({ viewedAt: 1, createdAt: -1 });
+registrationSchema.index({ serviceCategory: 1, serviceName: 1, createdAt: -1 });
 
 export const RegistrationModel = model<IRegistration>('Registration', registrationSchema, 'registrations');

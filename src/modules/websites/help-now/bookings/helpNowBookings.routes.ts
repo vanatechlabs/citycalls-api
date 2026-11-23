@@ -4,6 +4,7 @@ import { otpRateLimit, publicApiRateLimit, publicBookingRateLimit } from '../../
 import * as controller from './helpNowBookings.controller';
 import {
   createHelpNowBookingSchema,
+  helpNowPaymentFailedSchema,
   helpNowQuoteSchema,
   requestHelpNowOtpSchema,
   verifyHelpNowOtpSchema,
@@ -24,6 +25,8 @@ router.post(
   validate(verifyHelpNowPaymentSchema),
   controller.confirmHelpNowPaymentHandler
 );
+// Checkout's "payment failed" — keeps the call as a lead, marked failed.
+router.post(`${basePath}/payment-failed`, publicApiRateLimit, validate(helpNowPaymentFailedSchema), controller.helpNowPaymentFailedHandler);
 router.post(`${basePath}/otp/request`, otpRateLimit, validate(requestHelpNowOtpSchema), controller.requestHelpNowOtpHandler);
 router.post(`${basePath}/otp/verify`, otpRateLimit, validate(verifyHelpNowOtpSchema), controller.verifyHelpNowOtpHandler);
 

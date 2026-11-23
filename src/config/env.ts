@@ -70,6 +70,14 @@ export const env = {
     keyId: process.env.RAZORPAY_KEY_ID,
     keySecret: process.env.RAZORPAY_KEY_SECRET,
   },
+  // One Super Admin who signs in with a username, created at start-up if it
+  // doesn't exist yet (users/bootstrapAdmin.ts).
+  bootstrapAdmin: {
+    username: process.env.BOOTSTRAP_ADMIN_USERNAME,
+    password: process.env.BOOTSTRAP_ADMIN_PASSWORD,
+    mobile: process.env.BOOTSTRAP_ADMIN_MOBILE,
+    name: process.env.BOOTSTRAP_ADMIN_NAME,
+  },
 } as const;
 
 // What cors()/socket.io actually allow. Outside production, any localhost port

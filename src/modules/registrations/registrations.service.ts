@@ -77,13 +77,56 @@ export const HELP_NOW_SERVICE_CATEGORY = 'Help Now';
 
 // Help Now (helpnow.citycalls.in) bookings. Its services aren't Navbar List
 // links, so the name comes from the booking and the category is Help Now.
-export async function createHelpNowRegistration(data: Record<string, unknown> & { serviceName: string }) {
+// Help Now booking → a call in Admin → Help Now Call Section. `notify: false`
+// for an online booking whose payment hasn't come in yet: the customer gets
+// the "booking received" WhatsApp only once it's paid (markHelpNowRegistrationPaid).
+export async function createHelpNowRegistration(
+  data: Record<string, unknown> & { serviceName: string },
+  { notify = true }: { notify?: boolean } = {}
+) {
   const registration = await insertRegistration(
     { ...data, serviceCategory: HELP_NOW_SERVICE_CATEGORY },
     'WEBSITE',
     WEBSITE_ACTOR
   );
-  return confirmWebsiteBooking(registration);
+  const summary = notify
+    ? confirmWebsiteBooking(registration)
+    : { registrationNo: registration.registrationNo, serviceName: registration.serviceName };
+  return { ...summary, id: registration._id.toString() };
+}
+
+// A customer who retried an unpaid online booking: the same call is updated
+// with the new details instead of a second call being made.
+export async function updateHelpNowRegistration(id: string, data: Record<string, unknown>) {
+  const registration = await RegistrationModel.findOneAndUpdate(
+    { _id: id, serviceCategory: HELP_NOW_SERVICE_CATEGORY },
+    { $set: { ...data, updatedBy: WEBSITE_ACTOR } },
+    { new: true, runValidators: true }
+  );
+  if (!registration) throw new NotFoundError('Registration not found');
+  return { registrationNo: registration.registrationNo, serviceName: registration.serviceName, id: registration._id.toString() };
+}
+
+// Online payment result on a Help Now call: FAILED keeps it as a lead to
+// call back; PAID also sends the customer the "booking received" WhatsApp.
+export async function setHelpNowPayment(
+  id: string,
+  patch: { status: 'PAID' | 'FAILED'; paymentId?: string; paidAt?: Date; failureReason?: string }
+) {
+  const set: Record<string, unknown> = { 'payment.status': patch.status, 'payment.updatedAt': new Date() };
+  if (patch.paymentId) set['payment.paymentId'] = patch.paymentId;
+  if (patch.paidAt) set['payment.paidAt'] = patch.paidAt;
+  if (patch.status === 'FAILED') set['payment.failureReason'] = (patch.failureReason ?? 'Payment failed').slice(0, 300);
+  const registration = await RegistrationModel.findOneAndUpdate(
+    { _id: id, serviceCategory: HELP_NOW_SERVICE_CATEGORY },
+    patch.status === 'PAID' ? { $set: set, $unset: { 'payment.failureReason': '' } } : { $set: set },
+    { new: true }
+  );
+  if (!registration) throw new NotFoundError('Registration not found');
+  const summary = patch.status === 'PAID'
+    ? confirmWebsiteBooking(registration)
+    : { registrationNo: registration.registrationNo, serviceName: registration.serviceName };
+  return { ...summary, id: registration._id.toString() };
 }
 
 function confirmWebsiteBooking(registration: Awaited<ReturnType<typeof insertRegistration>>) {
@@ -164,9 +207,9 @@ async function sendBookingWhatsApp(
 export async function getUnreadRegistrations() {
   const filter = { viewedAt: { $exists: false } };
   const [byCategoryRows, latest] = await Promise.all([
-    RegistrationModel.aggregate<{ _id: { category: string | null; status: RegistrationStatus }; count: number }>([
+    RegistrationModel.aggregate<{ _id: { category: string | null; service: string | null; status: RegistrationStatus }; count: number }>([
       { $match: filter },
-      { $group: { _id: { category: '$serviceCategory', status: '$status' }, count: { $sum: 1 } } },
+      { $group: { _id: { category: '$serviceCategory', service: '$serviceName', status: '$status' }, count: { $sum: 1 } } },
     ]),
     RegistrationModel.find(filter)
       .sort({ createdAt: -1 })
@@ -177,13 +220,31 @@ export async function getUnreadRegistrations() {
 
   const byCategory: Record<string, number> = {};
   const newByCategory: Record<string, number> = {};
+  // Help Now Call Section: per service.
+  const byService: Record<string, number> = {};
+  const newByService: Record<string, number> = {};
   for (const row of byCategoryRows) {
     const category = row._id.category ?? 'Uncategorised';
+    const isNew = row._id.status === 'NEW';
+    if (category === HELP_NOW_SERVICE_CATEGORY) {
+      const service = row._id.service ?? 'Other';
+      byService[service] = (byService[service] ?? 0) + row.count;
+      if (isNew) newByService[service] = (newByService[service] ?? 0) + row.count;
+      continue;
+    }
     byCategory[category] = (byCategory[category] ?? 0) + row.count;
-    if (row._id.status === 'NEW') newByCategory[category] = (newByCategory[category] ?? 0) + row.count;
+    if (isNew) newByCategory[category] = (newByCategory[category] ?? 0) + row.count;
   }
   const sum = (counts: Record<string, number>) => Object.values(counts).reduce((total, n) => total + n, 0);
-  return { total: sum(byCategory), byCategory, newTotal: sum(newByCategory), newByCategory, latest };
+  return {
+    // City Calls (Service Call Section) only.
+    total: sum(byCategory),
+    byCategory,
+    newTotal: sum(newByCategory),
+    newByCategory,
+    helpNow: { total: sum(byService), byService, newTotal: sum(newByService), newByService },
+    latest,
+  };
 }
 
 // Opening a list page marks the unread rows it shows as read.
@@ -212,6 +273,8 @@ interface RegistrationFilterParams {
   q?: string;
   source?: RegistrationSource;
   serviceCategory?: string;
+  serviceName?: string;
+  website?: 'CITY_CALLS' | 'HELP_NOW';
   serviceId?: string;
   from?: string;
   to?: string;
@@ -241,6 +304,10 @@ function buildFilter(params: RegistrationFilterParams) {
 
   if (params.source) filter.source = params.source;
   if (params.serviceCategory) filter.serviceCategory = params.serviceCategory;
+  // Help Now calls have their own section; City Calls lists leave them out.
+  else if (params.website === 'HELP_NOW') filter.serviceCategory = HELP_NOW_SERVICE_CATEGORY;
+  else if (params.website === 'CITY_CALLS') filter.serviceCategory = { $ne: HELP_NOW_SERVICE_CATEGORY };
+  if (params.serviceName) filter.serviceName = params.serviceName;
   // Cast explicitly — this filter also feeds aggregate(), which doesn't cast.
   if (params.serviceId) filter.serviceId = new Types.ObjectId(params.serviceId);
   if (params.from || params.to) {
@@ -290,7 +357,7 @@ export async function getRegistrationStats(params: RegistrationFilterParams) {
 
   // Category tab counts ignore the category / service filters themselves, so
   // every tab keeps showing its own number while another tab is selected.
-  const crossCategoryFilter = buildFilter({ ...params, serviceCategory: undefined, serviceId: undefined });
+  const crossCategoryFilter = buildFilter({ ...params, serviceCategory: undefined, serviceName: undefined, serviceId: undefined });
 
   const [byStatusRows, byCategoryRows, today, couponApplied, categories] = await Promise.all([
     RegistrationModel.aggregate<{ _id: RegistrationStatus; count: number }>([

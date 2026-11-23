@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const loginSchema = z.object({
-  identifier: z.string().min(3, 'Enter an email or mobile number'),
+  identifier: z.string().min(3, 'Enter your username, email or mobile number'),
   password: z.string().min(1, 'Password is required'),
   deviceName: z.string().trim().min(1).max(120).optional(),
 });

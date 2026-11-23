@@ -15,8 +15,9 @@ describe('Help Now SEO pages', () => {
     expect(isHelpNowSeoKey('/helpnow-sites')).toBe(false);
   });
 
-  it('lists the home page and every service as valid SEO paths', () => {
-    expect(HELP_NOW_SEO_PAGES).toHaveLength(8);
+  it('lists the home and contact pages and every service as valid SEO paths', () => {
+    expect(HELP_NOW_SEO_PAGES).toHaveLength(9);
+    expect(HELP_NOW_SEO_PAGES.map((p) => p.path)).toContain('/helpnow-site/contact');
     for (const page of HELP_NOW_SEO_PAGES) expect(pagePathSchema.safeParse(page.path).success).toBe(true);
   });
 });

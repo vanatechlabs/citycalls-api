@@ -86,6 +86,10 @@ const registrationFilterFields = {
   q: z.string().trim().max(100).optional(),
   source: z.enum(REGISTRATION_SOURCES).optional(),
   serviceCategory: z.string().trim().max(120).optional(),
+  // Exact service, e.g. a Help Now service ("Dish Washing").
+  serviceName: z.string().trim().max(150).optional(),
+  // CITY_CALLS = everything except Help Now; HELP_NOW = only Help Now.
+  website: z.enum(['CITY_CALLS', 'HELP_NOW']).optional(),
   serviceId: objectIdSchema.optional(),
   from: dayString.optional(),
   to: dayString.optional(),

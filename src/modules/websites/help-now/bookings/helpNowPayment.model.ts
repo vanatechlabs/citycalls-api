@@ -2,11 +2,11 @@ import { Document, Schema, model } from 'mongoose';
 import type { HelpNowQuote } from './helpNowPricing';
 import type { CreateHelpNowBookingInput } from './helpNowBookings.validation';
 
-// One Razorpay order for an online-paid Help Now booking. The booking is held
-// here (as validated when the order was made) until Checkout reports the
-// payment; only then does it become a registration, so an abandoned checkout
-// never shows up as a booking in admin.
-export const HELP_NOW_PAYMENT_STATUSES = ['CREATED', 'PAID'] as const;
+// One Razorpay order for an online-paid Help Now booking. The booking becomes
+// a call in Admin → Help Now Call Section as soon as the order is made
+// (payment "Not completed"), so an abandoned checkout is still a lead to call
+// back; Checkout's result then marks it PAID or FAILED.
+export const HELP_NOW_PAYMENT_STATUSES = ['CREATED', 'PAID', 'FAILED'] as const;
 export type HelpNowPaymentStatus = (typeof HELP_NOW_PAYMENT_STATUSES)[number];
 
 export interface IHelpNowPayment extends Document {
@@ -17,6 +17,10 @@ export interface IHelpNowPayment extends Document {
   booking: Omit<CreateHelpNowBookingInput, 'phoneVerificationToken'>;
   razorpayPaymentId?: string;
   paidAt?: Date;
+  failureReason?: string;
+  // The call this order belongs to (orders from before calls were made at
+  // order time have none — their call is made when paid).
+  registrationId?: string;
   registrationNo?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -31,6 +35,8 @@ const helpNowPaymentSchema = new Schema<IHelpNowPayment>(
     booking: { type: Schema.Types.Mixed, required: true },
     razorpayPaymentId: { type: String, trim: true },
     paidAt: { type: Date },
+    failureReason: { type: String, trim: true, maxlength: 300 },
+    registrationId: { type: String, trim: true },
     registrationNo: { type: String, trim: true },
   },
   { timestamps: true }
