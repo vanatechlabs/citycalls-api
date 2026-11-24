@@ -61,7 +61,7 @@ export async function renderFinancialPdf(type: string, id: string): Promise<Buff
     doc.font('Latin');
   };
   const chunks: Buffer[] = [];
-  const result = new Promise<Buffer>((resolve, reject) => { doc.on('data', chunk => chunks.push(chunk)); doc.on('end', () => resolve(Buffer.concat(chunks))); doc.on('error', reject); });
+  const result = new Promise<Buffer>((resolve, reject) => { doc.on('data', (chunk: Buffer) => chunks.push(chunk)); doc.on('end', () => resolve(Buffer.concat(chunks))); doc.on('error', reject); });
   doc.fillColor('#126b43').fontSize(24).text('CityCalls');
   doc.fillColor('#111827').fontSize(15).text(type.replace(/_/g, ' '));
   doc.fontSize(10).text(`Number: ${record.number}`).text(`Date: ${new Date(record.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}`);

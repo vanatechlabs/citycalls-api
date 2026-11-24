@@ -197,8 +197,10 @@ export async function getInvoiceHandler(req: ScopedRequest, res: Response, next:
 
 export async function shareInvoiceHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
+    if (!req.user) throw new UnauthorizedError();
     const { channels } = req.body as { channels: string[] };
-    const invoice = await invoicesService.shareInvoice(paramAsString(req.params.id), channels);
+    await ownJob(req, (await invoicesService.getInvoice(paramAsString(req.params.id), req.user)).serviceRequestId);
+    const invoice = await invoicesService.shareInvoice(paramAsString(req.params.id), channels, req.user);
     sendSuccess(res, invoice, 'Invoice shared successfully');
   } catch (err) {
     next(err);
