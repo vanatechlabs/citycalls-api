@@ -11,6 +11,8 @@ import {
   listSessionsHandler,
   revokeSessionHandler,
   revokeAllSessionsHandler,
+  registerFcmTokenHandler,
+  unregisterFcmTokenHandler,
 } from './auth.controller';
 import { validate } from '../../middleware/validate.middleware';
 import { authMiddleware } from '../../middleware/auth.middleware';
@@ -21,6 +23,7 @@ import {
   otpVerifySchema,
   passwordResetRequestSchema,
   passwordResetSchema,
+  fcmTokenSchema,
 } from './auth.validation';
 import { authRateLimit, otpRateLimit } from '../../middleware/rateLimit.middleware';
 
@@ -38,6 +41,8 @@ router.post('/password/reset-request', authRateLimit, validate(passwordResetRequ
 router.post('/password/reset', authRateLimit, validate(passwordResetSchema), passwordResetHandler);
 
 router.get('/me', authMiddleware, meHandler);
+router.post('/me/fcm-token', authMiddleware, validate(fcmTokenSchema), registerFcmTokenHandler);
+router.delete('/me/fcm-token', authMiddleware, validate(fcmTokenSchema), unregisterFcmTokenHandler);
 
 router.get('/sessions', authMiddleware, listSessionsHandler);
 router.delete('/sessions/:id', authMiddleware, revokeSessionHandler);

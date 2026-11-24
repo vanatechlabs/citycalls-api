@@ -287,3 +287,17 @@ export async function getMe(userId: string) {
   delete (obj as { passwordHash?: string }).passwordHash;
   return { ...obj, permissions };
 }
+
+// Push tokens stored on the User itself — for vendor staff, who have no
+// Employee/Customer record to hang them on. A device token belongs to one
+// account at a time, so it is pulled from any other user first (shared phone,
+// logout + login as someone else).
+export async function registerUserFcmToken(userId: string, token: string): Promise<void> {
+  await UserModel.updateMany({ _id: { $ne: userId }, fcmTokens: token }, { $pull: { fcmTokens: token } });
+  const res = await UserModel.updateOne({ _id: userId }, { $addToSet: { fcmTokens: token } });
+  if (res.matchedCount === 0) throw new NotFoundError('User not found');
+}
+
+export async function unregisterUserFcmToken(userId: string, token: string): Promise<void> {
+  await UserModel.updateOne({ _id: userId }, { $pull: { fcmTokens: token } });
+}

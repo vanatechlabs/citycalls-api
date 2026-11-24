@@ -8,6 +8,7 @@ import {
   OtpVerifyInput,
   PasswordResetRequestInput,
   PasswordResetInput,
+  FcmTokenInput,
 } from './auth.validation';
 import { AuthenticatedRequest } from '../../middleware/auth.middleware';
 import { UnauthorizedError } from '../../lib/errors';
@@ -124,6 +125,28 @@ export async function revokeAllSessionsHandler(req: AuthenticatedRequest, res: R
     if (!req.user) throw new UnauthorizedError();
     await authService.revokeAllSessions(req.user.sub);
     sendSuccess(res, null, 'All sessions revoked successfully');
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function registerFcmTokenHandler(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (!req.user) throw new UnauthorizedError();
+    const { token } = req.body as FcmTokenInput;
+    await authService.registerUserFcmToken(req.user.sub, token);
+    sendSuccess(res, null, 'Push token registered successfully');
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function unregisterFcmTokenHandler(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (!req.user) throw new UnauthorizedError();
+    const { token } = req.body as FcmTokenInput;
+    await authService.unregisterUserFcmToken(req.user.sub, token);
+    sendSuccess(res, null, 'Push token unregistered successfully');
   } catch (err) {
     next(err);
   }

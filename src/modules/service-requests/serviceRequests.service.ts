@@ -563,18 +563,33 @@ export async function assignServiceRequest(id: string, input: AssignInput, actor
   }
 
 
-  // Only EMPLOYEE assignees resolve directly to a single notifiable User today
-  // (via Employee.userId) — BRANCH/SUB_BRANCH/TEAM/VENDOR/OUTSOURCED_PARTNER
-  // assignees are organizational units, not individual users, and resolving
-  // "who specifically to notify" for those (a branch's on-duty dispatcher? every
-  // team member?) is a real design question left open rather than guessed at
-  // here; those assignment types simply don't get a direct notification yet.
+  // EMPLOYEE assignees resolve to one User (via Employee.userId). VENDOR
+  // assignees are a company: every active vendor-staff user sees the job in
+  // the vendor app, so all of them are told — on Push + In-app only, so a
+  // big vendor doesn't cost an SMS/WhatsApp per technician. BRANCH/SUB_BRANCH/
+  // TEAM/OUTSOURCED_PARTNER assignees still get no direct notification (who
+  // to notify there is an open design question).
   if (input.assigneeType === 'EMPLOYEE') {
     const employee = await EmployeeModel.findById(input.assigneeId);
     if (employee) {
       await trigger('SERVICE_REQUEST_ASSIGNED', {
         recipient: { userId: employee.userId.toString() },
         variables: { serviceRequestId: id },
+      });
+    }
+  } else if (input.assigneeType === 'VENDOR') {
+    const vendorUsers = await UserModel.find({
+      vendorId: input.assigneeId,
+      status: 'ACTIVE',
+      role: { $in: ['VENDOR_OWNER', 'VENDOR_MANAGER', 'VENDOR_TECHNICIAN'] },
+    })
+      .select('_id')
+      .lean();
+    for (const u of vendorUsers) {
+      await trigger('SERVICE_REQUEST_ASSIGNED', {
+        recipient: { userId: u._id.toString() },
+        variables: { serviceRequestId: id },
+        channels: ['PUSH', 'IN_APP'],
       });
     }
   }

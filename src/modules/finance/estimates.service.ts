@@ -17,6 +17,26 @@ import { logActivity } from '../../lib/auditLog';
 import { AccessTokenPayload } from '../../lib/jwt';
 import { DataScope } from '../users/users.types';
 import { isCustomerRole, resolveOwnCustomerId } from '../../lib/ownCustomerScope';
+import { updateStatus as updateServiceRequestStatus } from '../service-requests/serviceRequests.service';
+import { ServiceRequestStatus } from '../service-requests/serviceRequests.model';
+import { restrictToOwnJobs } from '../../lib/ownFieldScope';
+async function syncServiceRequestStatus(
+  serviceRequestId: unknown,
+  toStatus: ServiceRequestStatus,
+  actor: AccessTokenPayload,
+  reason: string
+): Promise<void> {
+  if (!serviceRequestId) return;
+  try {
+    await updateServiceRequestStatus(serviceRequestId.toString(), toStatus, actor, { reason });
+  } catch (err) {
+    console.error(
+      `[estimates] failed to sync ServiceRequest ${serviceRequestId.toString()} to status ${toStatus} (reason: ${reason})`,
+      err
+    );
+  }
+}
+
 interface LineItemInput {
   description: string;
   partId?: string;
@@ -103,6 +123,8 @@ export async function listEstimates(
     const ownId = await resolveOwnCustomerId(user.sub);
     filter.customerId = ownId ?? null;
   }
+  // Field technicians (OWN scope): only estimates on jobs assigned to them.
+  await restrictToOwnJobs(filter, scope, user, params.serviceRequestId);
 
   Object.assign(filter, await financeFilter(user));
   const skip = (params.page - 1) * params.limit;

@@ -85,6 +85,17 @@ const API_MENUS: { prefix: string; keys: string[] }[] = [
 
 // The user's own things (FCM token, availability) stay open to everyone.
 const ALWAYS_OPEN = ['/employees/me', '/customers/me'];
+
+// Field roles work only from the vendor mobile app, never the admin sidebar
+// these menus describe — a menu list set on one of them (even by mistake)
+// would otherwise block every job action they take (sync, payments,
+// estimates). Their access is already limited by role permissions and the
+// own-job checks on each route.
+const FIELD_ROLES = new Set(['EMPLOYEE', 'TECHNICIAN', 'VENDOR_TECHNICIAN']);
+
+export function isExemptFromMenuAccess(role: string): boolean {
+  return role === 'SUPER_ADMIN' || FIELD_ROLES.has(role);
+}
 const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 const matches = (path: string, prefix: string) => path === prefix || path.startsWith(`${prefix}/`);
@@ -135,7 +146,7 @@ export async function menuAccessGuard(req: Request, _res: Response, next: NextFu
     }
 
     const access = await loadAccess(userId);
-    if (access.role === 'SUPER_ADMIN' || !Array.isArray(access.menuAccess)) return next();
+    if (isExemptFromMenuAccess(access.role) || !Array.isArray(access.menuAccess)) return next();
     if (hasAnyMenu(access.menuAccess, keys)) return next();
     next(new ForbiddenError("You don't have access to this menu"));
   } catch (error) {

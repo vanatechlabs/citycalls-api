@@ -6,12 +6,28 @@ import * as paymentsService from './payments.service';
 import * as notesService from './creditDebitNotes.service';
 import { sendSuccess, paramAsString } from '../../lib/apiResponse';
 import { ScopedRequest } from '../../middleware/permission.middleware';
-import { UnauthorizedError } from '../../lib/errors';
+import { UnauthorizedError, ForbiddenError } from '../../lib/errors';
+import { assertOwnFieldRecord, isFieldRole } from '../../lib/ownFieldScope';
+
+// OWN-scoped field users (technicians, vendor staff) may only see or act on
+// finance records belonging to jobs assigned to them — see lib/ownFieldScope.ts.
+const ownJob = (req: ScopedRequest, serviceRequestId: unknown) =>
+  assertOwnFieldRecord(serviceRequestId, req.scope, req.user);
+
+// A field user creating an estimate/invoice must tie it to one of their jobs.
+async function assertCreateForOwnJob(req: ScopedRequest): Promise<void> {
+  const serviceRequestId = (req.body as { serviceRequestId?: string }).serviceRequestId;
+  if (req.scope === 'OWN' && req.user && isFieldRole(req.user.role) && !serviceRequestId) {
+    throw new ForbiddenError('Link this document to one of your jobs');
+  }
+  if (serviceRequestId) await ownJob(req, serviceRequestId);
+}
 
 // --- Estimates ---
 export async function createEstimateHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
     if (!req.user) throw new UnauthorizedError();
+    await assertCreateForOwnJob(req);
     const estimate = await estimatesService.createEstimate(req.body, req.user);
     sendSuccess(res, estimate, 'Estimate created successfully', null, 201);
   } catch (err) {
@@ -32,6 +48,7 @@ export async function listEstimatesHandler(req: ScopedRequest, res: Response, ne
 export async function getEstimateHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
     const estimate = await estimatesService.getEstimate(paramAsString(req.params.id), req.user);
+    await ownJob(req, estimate.serviceRequestId);
     sendSuccess(res, estimate, 'Estimate fetched successfully');
   } catch (err) {
     next(err);
@@ -42,6 +59,7 @@ export async function shareEstimateHandler(req: ScopedRequest, res: Response, ne
   try {
     if (!req.user) throw new UnauthorizedError();
     const { channels } = req.body as { channels: string[] };
+    await ownJob(req, (await estimatesService.getEstimate(paramAsString(req.params.id), req.user)).serviceRequestId);
     const estimate = await estimatesService.shareEstimate(paramAsString(req.params.id), channels, req.user);
     sendSuccess(res, estimate, 'Estimate shared successfully');
   } catch (err) {
@@ -72,6 +90,7 @@ export async function rejectEstimateHandler(req: ScopedRequest, res: Response, n
 export async function convertEstimateHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
     if (!req.user) throw new UnauthorizedError();
+    await ownJob(req, (await estimatesService.getEstimate(paramAsString(req.params.id), req.user)).serviceRequestId);
     const proforma = await proformaService.convertEstimateToProforma(paramAsString(req.params.id), req.user);
     sendSuccess(res, proforma, 'Estimate converted to proforma invoice successfully', null, 201);
   } catch (err) {
@@ -92,7 +111,8 @@ export async function listProformaInvoicesHandler(req: ScopedRequest, res: Respo
 
 export async function getProformaInvoiceHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
-    const proforma = await proformaService.getProformaInvoice(paramAsString(req.params.id), req.user);
+    const proforma = await proformaService.getProformaInvoice(paramAsString(req.params.id));
+    await ownJob(req, proforma.serviceRequestId);
     sendSuccess(res, proforma, 'Proforma invoice fetched successfully');
   } catch (err) {
     next(err);
@@ -103,6 +123,7 @@ export async function shareProformaInvoiceHandler(req: ScopedRequest, res: Respo
   try {
     if (!req.user) throw new UnauthorizedError();
     const { channels } = req.body as { channels: string[] };
+    await ownJob(req, (await proformaService.getProformaInvoice(paramAsString(req.params.id))).serviceRequestId);
     const proforma = await proformaService.shareProformaInvoice(paramAsString(req.params.id), channels, req.user);
     sendSuccess(res, proforma, 'Proforma invoice shared successfully');
   } catch (err) {
@@ -113,6 +134,7 @@ export async function shareProformaInvoiceHandler(req: ScopedRequest, res: Respo
 export async function generateProformaFromServiceRequestHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
     if (!req.user) throw new UnauthorizedError();
+    await ownJob(req, paramAsString(req.params.id));
     const proforma = await proformaService.generateProformaFromServiceRequest(paramAsString(req.params.id), req.user);
     sendSuccess(res, proforma, 'Proforma invoice generated and shared successfully', null, 201);
   } catch (err) {
@@ -133,6 +155,7 @@ export async function acceptProformaInvoiceHandler(req: ScopedRequest, res: Resp
 export async function convertProformaHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
     if (!req.user) throw new UnauthorizedError();
+    await ownJob(req, (await proformaService.getProformaInvoice(paramAsString(req.params.id))).serviceRequestId);
     const invoice = await invoicesService.convertProformaToInvoice(paramAsString(req.params.id), req.user);
     sendSuccess(res, invoice, 'Proforma invoice converted to invoice successfully', null, 201);
   } catch (err) {
@@ -144,6 +167,7 @@ export async function convertProformaHandler(req: ScopedRequest, res: Response, 
 export async function createDirectInvoiceHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
     if (!req.user) throw new UnauthorizedError();
+    await assertCreateForOwnJob(req);
     const invoice = await invoicesService.createDirectInvoice(req.body, req.user);
     sendSuccess(res, invoice, 'Invoice created successfully', null, 201);
   } catch (err) {
@@ -164,6 +188,7 @@ export async function listInvoicesHandler(req: ScopedRequest, res: Response, nex
 export async function getInvoiceHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
     const invoice = await invoicesService.getInvoice(paramAsString(req.params.id), req.user);
+    await ownJob(req, invoice.serviceRequestId);
     sendSuccess(res, invoice, 'Invoice fetched successfully');
   } catch (err) {
     next(err);
@@ -173,7 +198,7 @@ export async function getInvoiceHandler(req: ScopedRequest, res: Response, next:
 export async function shareInvoiceHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
     const { channels } = req.body as { channels: string[] };
-    const invoice = await invoicesService.shareInvoice(paramAsString(req.params.id), channels, req.user!);
+    const invoice = await invoicesService.shareInvoice(paramAsString(req.params.id), channels);
     sendSuccess(res, invoice, 'Invoice shared successfully');
   } catch (err) {
     next(err);
@@ -184,6 +209,7 @@ export async function cancelInvoiceHandler(req: ScopedRequest, res: Response, ne
   try {
     if (!req.user) throw new UnauthorizedError();
     const { reason } = req.body as { reason: string };
+    await ownJob(req, (await invoicesService.getInvoice(paramAsString(req.params.id), req.user)).serviceRequestId);
     const invoice = await invoicesService.cancelInvoice(paramAsString(req.params.id), reason, req.user);
     sendSuccess(res, invoice, 'Invoice cancelled successfully');
   } catch (err) {
@@ -195,6 +221,7 @@ export async function cancelInvoiceHandler(req: ScopedRequest, res: Response, ne
 export async function recordPaymentHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
     if (!req.user) throw new UnauthorizedError();
+    await ownJob(req, (await invoicesService.getInvoice(paramAsString(req.params.id), req.user)).serviceRequestId);
     const receipt = await paymentsService.recordPayment(paramAsString(req.params.id), req.body, req.user);
     sendSuccess(res, receipt, 'Payment recorded successfully', null, 201);
   } catch (err) {
@@ -204,6 +231,7 @@ export async function recordPaymentHandler(req: ScopedRequest, res: Response, ne
 
 export async function listPaymentsHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
+    await ownJob(req, (await invoicesService.getInvoice(paramAsString(req.params.id), req.user)).serviceRequestId);
     const receipts = await paymentsService.listPaymentsForInvoice(paramAsString(req.params.id), req.user);
     sendSuccess(res, receipts, 'Payment receipts fetched successfully');
   } catch (err) {

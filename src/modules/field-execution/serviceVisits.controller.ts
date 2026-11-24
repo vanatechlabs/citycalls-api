@@ -5,25 +5,28 @@ import { sendSuccess, paramAsString } from '../../lib/apiResponse';
 import { ScopedRequest } from '../../middleware/permission.middleware';
 import { UnauthorizedError } from '../../lib/errors';
 
-export async function listVisitsHandler(req: ScopedRequest, res: Response, next: NextFunction) {
-  try {
-    await assertCanActOnServiceRequest(req, paramAsString(req.params.id));
-    const visits = await visitService.getVisitsForServiceRequest(paramAsString(req.params.id));
-    sendSuccess(res, visits, 'Service visits fetched successfully');
-  } catch (err) {
-    next(err);
-  }
-}
-
-// Every mutation below acts on a specific Service Request by ID — without
-// this check, any actor with fieldExecution:edit (any scope) could act on a
-// job that was never assigned to them (a real gap this fixes, not specific
-// to any one role: OWN-scope EMPLOYEE/TECHNICIAN/VENDOR_TECHNICIAN callers
-// all need it, and it's a no-op for BRANCH/ALL-scope staff).
+// Every handler below acts on a specific Service Request by ID — without
+// this check, any actor with fieldExecution access (any scope) could read
+// or act on a job that was never assigned to them (OWN-scope
+// EMPLOYEE/TECHNICIAN/VENDOR_TECHNICIAN callers all need it; it's a no-op
+// for BRANCH/ALL-scope staff).
 async function assertCanActOnServiceRequest(req: ScopedRequest, id: string): Promise<void> {
   if (!req.user || !req.scope) throw new UnauthorizedError();
   const sr = await getServiceRequest(id);
   await assertOwnServiceRequestAccess(sr, req.scope, req.user);
+}
+
+export async function listVisitsHandler(req: ScopedRequest, res: Response, next: NextFunction) {
+  try {
+    const id = paramAsString(req.params.id);
+    // Visits hold the job's inspection notes, parts, charges and photos of
+    // the customer's home — same own-job check as the write handlers.
+    await assertCanActOnServiceRequest(req, id);
+    const visits = await visitService.getVisitsForServiceRequest(id);
+    sendSuccess(res, visits, 'Service visits fetched successfully');
+  } catch (err) {
+    next(err);
+  }
 }
 
 export async function updateInspectionHandler(req: ScopedRequest, res: Response, next: NextFunction) {

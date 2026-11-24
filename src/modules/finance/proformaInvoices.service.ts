@@ -14,6 +14,8 @@ import { trigger } from '../../lib/notifications';
 import { logActivity } from '../../lib/auditLog';
 import { AccessTokenPayload } from '../../lib/jwt';
 import { DataScope } from '../users/users.types';
+import { restrictToOwnJobs } from '../../lib/ownFieldScope';
+import { isCustomerRole, resolveOwnCustomerId } from '../../lib/ownCustomerScope';
 
 export async function convertEstimateToProforma(estimateId: string, actor: AccessTokenPayload) {
   assertFinanceStaff(actor);
@@ -69,6 +71,13 @@ export async function listProformaInvoices(
   if (params.customerId) filter.customerId = params.customerId;
   if (params.serviceRequestId) filter.serviceRequestId = params.serviceRequestId;
   if (scope === 'BRANCH' && user.branchId) filter.branchId = user.branchId;
+  // OWN scope was unenforced here for everyone: a customer could list other
+  // customers' bills, a technician every job's bills.
+  if (scope === 'OWN' && isCustomerRole(user.role)) {
+    const ownId = await resolveOwnCustomerId(user.sub);
+    filter.customerId = ownId ?? null;
+  }
+  await restrictToOwnJobs(filter, scope, user, params.serviceRequestId);
 
   Object.assign(filter, await financeFilter(user));
   const skip = (params.page - 1) * params.limit;

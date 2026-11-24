@@ -36,3 +36,10 @@ export type OtpRequestInput = z.infer<typeof otpRequestSchema>;
 export type OtpVerifyInput = z.infer<typeof otpVerifySchema>;
 export type PasswordResetRequestInput = z.infer<typeof passwordResetRequestSchema>;
 export type PasswordResetInput = z.infer<typeof passwordResetSchema>;
+
+// Push token for accounts with no Employee/Customer record of their own
+// (vendor staff on the vendor mobile app).
+export const fcmTokenSchema = z.object({
+  token: z.string().trim().min(1).max(4096),
+});
+export type FcmTokenInput = z.infer<typeof fcmTokenSchema>;

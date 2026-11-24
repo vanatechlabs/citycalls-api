@@ -27,7 +27,8 @@ export async function markReadHandler(req: ScopedRequest, res: Response, next: N
 export async function unreadCountHandler(req: ScopedRequest, res: Response, next: NextFunction) {
   try {
     if (!req.user) throw new UnauthorizedError();
-    const count = await notificationsService.getUnreadCount(req.user.sub);
+    const { channel } = req.query as { channel?: string };
+    const count = await notificationsService.getUnreadCount(req.user.sub, channel);
     sendSuccess(res, { count }, 'Unread count fetched successfully');
   } catch (err) {
     next(err);
